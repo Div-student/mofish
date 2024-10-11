@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>设置</title>
+  <link rel="stylesheet" href="./jqueryJs/jqueryUi.css">
+  <script src="./jqueryJs/jquery.js"></script>
+  <script src="./jqueryJs/jqueryUi.js"></script>
+  <style>
+    .ui-accordion .ui-accordion-content{
+      height: auto!important;
+      padding: 10px!important
+    }
+    .readingProcess{
+      font-size: 12px;
+    }
+    #novalProcess,#novalName,#novalChart{
+      margin-right: 6px;
+      font-weight: bold;
+    }
+    .ui-accordion .ui-accordion-content{
+      font-size: 12px;
+    }
+    .ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button {
+      font-family: Arial, Helvetica, sans-serif;
+      border: none;
+      background: none;
+      padding: 0;
+      margin-bottom: 5px;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .fontColor{
+      display: flex;
+      align-items: center;
+    }
+    .fontColor,.bgtransparent,.showWay{
+      padding: 10px 0px;
+      border-bottom: 1px dashed #cccc
+    }
+    #colorPicker{
+      margin-bottom: 0px;
+    }
+    #custom-handle{
+      display: flex;
+      justify-content: center;
+    }
+    .ui-accordion .ui-accordion-header {
+      font-size: 14px;
+    }
+    .showIcon{
+      display: flex;
+      justify-content: space-between;
+    }
+    #speed{
+      outline: none
+    }
+    .wordWrap{
+      display: flex;
+      align-items: center
+    }
+    #wordSize{
+      width: 40px;
+      height: 20px;
+      outline: 1px solid #bbb;
+      text-decoration: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+    <div id="dialog-confirm" title="Empty the recycle bin?">
+      <p>
+        <span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>
+        该小说已导入过，是否替换？
+      </p>
+    </div>
+  <div id="accordion">
+    <h3>小说设置</h3>
+    <div>
+      <div><button id="readFileButton">导入小说</button></div>
+      <div class="readingProcess">
+        <span>当前正在阅读：</span><span id="novalName">无</span><span>阅读章节：</span><span id="novalChart">第0章 无</span><span>阅读进度：</span><span id="novalProcess">0%</span>
+      </div>
+    </div>
+    <h3>个人偏好设置</h3>
+    <div>
+      <div class="showWay">
+        <fieldset>
+          <legend>小说出现方式: </legend>
+          <input type="radio" name="radio-1" id="radio-1" value="鼠标单击">
+          <label for="radio-1">鼠标单击</label>
+          <input type="radio" name="radio-1" id="radio-2" value="鼠标双击">
+          <label for="radio-2">鼠标双击</label>
+          <input type="radio" name="radio-1" id="radio-3" value="鼠标移入">
+          <label for="radio-3">鼠标移入</label>
+          <input type="radio" name="radio-1" id="radio-4" value="不隐藏">
+          <label for="radio-4">不隐藏</label>
+        </fieldset>
+      </div>
+      <div class="bgtransparent">
+        <span>背景透明度：</span>
+        <div id="slider">
+          <div id="custom-handle" class="ui-slider-handle"></div>
+        </div>
+      </div>
+      <div class="fontColor showIcon">
+        <div class="wordWrap">
+          <span>文字颜色：</span>
+          <input id="colorPicker" type="color">
+        </div>
+        <div class="wordWrap">
+          <span>字体大小：</span>
+          <input id="wordSize" type="text">
+          <span>&nbsp; px</span>
+        </div>
+      </div>
+      <div class="fontColor showIcon">
+        <div>
+          <label for="speed">是否隐藏状态栏图标:</label>
+          <select name="speed" id="speed">
+            <option>是</option>
+            <option>否</option>
+          </select>
+        </div>
+        <div>
+          <label for="speeds">是否隐藏托盘图标:</label>
+          <select name="speeds" id="speeds">
+            <option>是</option>
+            <option selected="selected">否</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./settingsRender.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+const { contextBridge, ipcRenderer} = require('electron');
+const  fs = require('fs');
+const  path = require('path');
+const Store = require('electron-store');
+
+const store = new Store();
+
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  readFile: (filePath) => {
+    return new Promise((resolve, reject) => {
+      fs.readFile(filePath, 'utf-8', (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
+  },
+  sendMessage: (channel, data) => {
+    ipcRenderer.send(channel, data);
+  },
+  onMessage: (channel, callback) => {
+    ipcRenderer.on(channel, (event, ...args) => callback(...args));
+  },
+  selectFile: () => ipcRenderer.invoke('select-file'),
+  saveData: (key, value) => store.set(key, value),
+  loadData: (key) => store.get(key),
+  openNewWindow: () => ipcRenderer.send('open-set-window'),
+  sendMessageToParent: (message) => ipcRenderer.send('message-from-child', message),
+  onMessageFromParent: (callback) => ipcRenderer.on('message-to-parent', (event, message) => callback(message)),
+  clickSetting: (callback) => ipcRenderer.on('clickSetting', (event, message) => callback(message)),
+  showContextMenu: () => ipcRenderer.send('show-context-menu'),
+  windowMove: (canMove) => ipcRenderer.send("window-move-open", canMove),
+  getMachinID: () => ipcRenderer.invoke('getMachinID'), // 激活码页面发送的获取机器ID消息 
+  activeAppToken: (message) => ipcRenderer.invoke('activeAppToken', message), // 激活验证码
+  closeChildWindow: () => ipcRenderer.send('closeChildWindow'), // 关闭授权弹窗
+});

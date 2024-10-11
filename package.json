@@ -1,0 +1,21 @@
+{
+  "name": "mofish",
+  "version": "1.0.0",
+  "description": "mo yu version 1",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "bobokeji",
+  "license": "ISC",
+  "devDependencies": {
+    "@electron/fuses": "^1.8.0",
+    "electron": "^31.0.2"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^7.0.3",
+    "node-machine-id": "^1.1.12"
+  }
+}

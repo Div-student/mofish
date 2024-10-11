@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>激活码设置</title>
+  <style>
+    body{
+      font-size: 12px;
+      margin: 0;
+    }
+    #identityID {
+      width: 90%; /* 设置容器宽度 */
+      white-space: nowrap; /* 不换行 */
+      overflow: hidden; /* 隐藏超出部分 */
+      text-overflow: ellipsis; /* 显示省略号 */
+      border: 1px solid #ccc; /* 可选：添加边框以便观察效果 */
+      padding: 5px; /* 可选：添加内边距 */
+    }
+    .identityWrap{
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px dashed #bbb;
+      padding: 10px;
+    }
+    #identityContent{
+      width: 90%; /* 设置宽度 */
+      height: 20px; /* 设置高度 */
+      resize: none;
+      border: none;
+      outline: 1px solid #bbb;
+    }
+  </style>
+</head>
+<body>
+    <div class="identityWrap">
+      <span>您没有输入激活码或激活码已过期！！请联系微信：【bobokeji520】获取免费的激活码！！</span>
+    </div>
+  <div class="identityWrap">
+    <div><span>我的身份ID:</span> <span id="copyBtn">一键复制</span></div>
+    <div id="identityID"></div>
+  </div>
+  <div class="identityWrap">
+    <span>请输入你的激活码:</span>
+    <textarea id="identityContent" placeholder="联系开发者获取你的验证码？"></textarea>
+  </div>
+  <div class="identityWrap">
+    <div id="identityBtnWrap">
+      <button id="identityBtn">激活验证码</button>
+    </div>
+  </div>
+  <script src="./validateTokenRender.js"></script>
+</body>
+</html>
