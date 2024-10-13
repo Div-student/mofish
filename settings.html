@@ -66,6 +66,28 @@
       text-decoration: none;
       text-align: center;
     }
+    .divideLine{
+      display: inline-block;
+      height: 0px;
+      border: 1px dashed #bbb;
+      width: 100%;
+    }
+    .readingContent{
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 5px;
+      flex-wrap: wrap; /* 允许换行 */
+    }
+    .articleItem{
+      max-width: 130px;
+      display: flex;
+      justify-content: flex-start;
+    }
+    .articleItem button{
+      overflow: hidden; /* 隐藏溢出内容 */
+      white-space: nowrap; /* 不换行 */
+      text-overflow: ellipsis; /* 超出部分显示省略号 */
+    }
   </style>
 </head>
 <body>
@@ -82,6 +104,9 @@
       <div class="readingProcess">
         <span>当前正在阅读：</span><span id="novalName">无</span><span>阅读章节：</span><span id="novalChart">第0章 无</span><span>阅读进度：</span><span id="novalProcess">0%</span>
       </div>
+      <div class="divideLine"></div>
+      <div><span>切换小说</span></div>
+      <div id="readingContent" class="readingContent"></div>
     </div>
     <h3>个人偏好设置</h3>
     <div>

@@ -9,6 +9,7 @@ let userProfile = window.electronAPI.loadData('userProfile') || {}; // 获取缓
 let novalNameDom = document.getElementById('novalName')
 let novalChartDom = document.getElementById('novalChart')
 let novalProcessDom = document.getElementById('novalProcess')
+let readingContentDom = document.getElementById('readingContent')
 
 function ResetReadProcess(){
   console.log("storeData,fileName====>", storeData, fileName)
@@ -47,6 +48,7 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
       }else{
         // 设置当前小说章节
         ResetReadProcess()
+        getAllNovalName() // 更新可切换小说列表
       }
     } catch (err) {
       console.error('读取文件失败', err);
@@ -60,7 +62,7 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
 // 加载jq组件
 $( function() {
   var handle = $( "#custom-handle" );
-  $( "#accordion" ).accordion();
+  $( "#accordion" ).accordion({ collapsible: true, animate:false });
 
   $( "#slider" ).slider({
     value: userProfile?.bgTransparent ?? 100,
@@ -134,12 +136,32 @@ $('#wordSize').on('input', function() {
 
 function setReadProcess(){
   if(!currentProcess.name) return;
+  console.log("currentProcess===>", currentProcess)
   novalNameDom.innerText = currentProcess.name
   let chapterTemp = storeData[currentProcess.name][currentProcess.chapter]
   novalChartDom.innerText = chapterTemp.length>1 ? chapterTemp[0]:"序章"
-  novalProcessDom.innerText = currentProcess?.readPercent + "%"
+  novalProcessDom.innerText = Number(currentProcess?.readPercent).toFixed(1) + "%"
 }
 
+function getAllNovalName(){
+  storeData = window.electronAPI.loadData('mydata') || {}
+  let novalNames = Object.keys(storeData)
+  console.log("novalNames===>", novalNames)
+  let innerString = ""
+  novalNames.forEach(item => {
+    innerString += `<div class="articleItem"><span>《</span><button title=${item} onclick="changeNoval('${item}')">${item}</button><span>》</span></div>`
+  })
+  readingContentDom.innerHTML = innerString
+}
+
+function changeNoval(novalName){
+  window.electronAPI.saveData('currentProcess', { name:novalName, chapter:"0", readPercent:0, scrollTop:0 });
+  // 重置当前阅读进度
+  novalNameDom.innerText = novalName
+  novalChartDom.innerText = "0"
+  novalProcessDom.innerText = 0 + "%"
+  window.electronAPI.sendMessageToParent({ changeNoval:novalName });
+}
 
 
 // 初始化页面配置
@@ -151,7 +173,6 @@ function initPage(){
 
   // 获取缓存中的字体大小
   let wordSize = userProfile?.wordSize || 14;
-  console.error('wordSize====>', wordSize);
   $('#wordSize').val(wordSize);
   
   // 获取缓存中小说的隐藏方式
@@ -162,6 +183,9 @@ function initPage(){
 
   // 获取当前正在阅读小说进度
   setReadProcess()
+
+  // 获取历史导入的所有小说
+  getAllNovalName()
 
   // 获取缓存中icon图标显示状态
   selectElement.value = userProfile?.statusBarIcon || "否"

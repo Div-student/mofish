@@ -10,6 +10,7 @@ const createWindow = () => {
   let windowSizeRes = store.get("windowSize")
   win = new BrowserWindow({
     width: windowSizeRes?.width || 460,
+    // width: 1000,
     height: windowSizeRes?.height || 240,
     frame:false,
     alwaysOnTop: true, // 设置窗口始终位于顶层
@@ -32,7 +33,6 @@ const createWindow = () => {
 
   let validateRes = validateToken()
   if(validateRes.error == 0 || validateRes.error == 1){
-    generateDateToken("2024-10-07", "59695ba15d4bdcc6187994c2b242c231713da5b9ae9215d01fee1f817450c70d")
     createTokenWindow()
   }
   
@@ -43,8 +43,9 @@ const createWindow = () => {
 function createNewWindow() {
   const newWindow = new BrowserWindow({
     width: 500,
+    // width: 1000,
     height: 380,
-    autoHidenMenuBar:true,
+    autoHideMenuBar:true,
     parent: win,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

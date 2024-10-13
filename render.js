@@ -14,7 +14,7 @@ let userProfileData = window.electronAPI.loadData('userProfile') || {};
 // 监听设置弹窗的配置事件
 window.electronAPI.onMessageFromParent((message) => {
   userProfileData = window.electronAPI.loadData('userProfile') // 刷新个人配置数据
-  if(message.type == "importData"){
+  if(message.type == "importData"){ // 导入小说
     data = window.electronAPI.loadData('mydata')
     currentProcess = window.electronAPI.loadData('currentProcess')
     textarea.scrollTop = 0 // 重置阅读进度
@@ -29,63 +29,60 @@ window.electronAPI.onMessageFromParent((message) => {
   }else if(message.showUpWay){
     if(message.showUpWay == "不隐藏"){
       textarea.setAttribute("class", "")
+      nextChartInner.setAttribute("class", "")
+      preChartInner.setAttribute("class", "")
     }
     userProfileData = window.electronAPI.loadData('userProfile') // 重新获取一下缓存数据
   }else if(message.bgTransparent==0 || message.bgTransparent){
     titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${message.bgTransparent/100});`)
+  }else if(message.changeNoval){ // 切换小说
+    currentProcess = window.electronAPI.loadData('currentProcess') //刷新缓存数据
+    console.log("刷新缓存数据=====>", currentProcess)
+    data = window.electronAPI.loadData('mydata')
+    textarea.innerHTML = data[message.changeNoval][0];
+    textarea.scrollTop = 0 // 重置阅读进度
   }
+  
 });
 
 
-
-
 titlebar.addEventListener("mouseenter", ()=>{
-  if(userProfileData.showupWay == "鼠标移入"){
+  if(userProfileData?.showupWay == "鼠标移入"){
     textarea.setAttribute("class", "")
+    nextChartInner.setAttribute("class", "")
+    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("click", ()=>{
-  if(userProfileData.showupWay == "鼠标单击"){
+  if(userProfileData?.showupWay == "鼠标单击"){
     textarea.setAttribute("class", "")
+    nextChartInner.setAttribute("class", "")
+    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("dblclick", ()=>{
-  if(userProfileData.showupWay == "鼠标双击"){
+  if(userProfileData?.showupWay == "鼠标双击"){
     textarea.setAttribute("class", "")
+    nextChartInner.setAttribute("class", "")
+    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("mouseleave", ()=>{
-  if(userProfileData.showupWay && userProfileData.showupWay != "不隐藏"){
+  if(userProfileData?.showupWay && userProfileData.showupWay != "不隐藏"){
     textarea.setAttribute("class", "hiden")
+    nextChartInner.setAttribute("class", "hiden")
+    preChartInner.setAttribute("class", "hiden")
   }
 })
 
-
-nextChart.addEventListener("mouseenter", ()=>{
-  nextChartInner.setAttribute("class", "")
-  preChartInner.setAttribute("class", "")
-})
-preChart.addEventListener("mouseenter", ()=>{
-  nextChartInner.setAttribute("class", "")
-  preChartInner.setAttribute("class", "")
-})
-nextChart.addEventListener("mouseleave", ()=>{
-  nextChartInner.setAttribute("class", "hiden")
-  preChartInner.setAttribute("class", "hiden")
-})
-preChart.addEventListener("mouseleave", ()=>{
-  nextChartInner.setAttribute("class", "hiden")
-  preChartInner.setAttribute("class", "hiden")
-})
-
-
-
+// 实时记录阅读进度
 textarea.addEventListener('scroll', () => {
   const scrollTop = textarea.scrollTop;
   // 获取滚动条的高度
   const scrollHeight = textarea.scrollHeight;
   const clientHeight = textarea.clientHeight;
   let readPercent = ((scrollTop+clientHeight)/scrollHeight).toFixed(2)*100
+  console.log("实时记录阅读进度=====>", currentProcess)
   currentProcess.readPercent = readPercent
   currentProcess.scrollTop = scrollTop
   window.electronAPI.saveData('currentProcess', currentProcess);
@@ -119,13 +116,12 @@ preChart.addEventListener("click", ()=>{
 
 // 初始化页面配置
 function initPage(){
-  console.log("data=====>", data)
   // 获取缓存中的小说
   if(data[currentProcess.name]?.[currentProcess.chapter]){
     // textarea.value = data[currentProcess.name]?.[currentProcess.chapter];
     textarea.innerHTML = data[currentProcess.name]?.[currentProcess.chapter];
   }else{
-    textarea.innerHTML = "\n \n \n \n欢迎使用「波波摸鱼阅读器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：wx:bobokeji521";
+    textarea.innerHTML = "\n \n \n \n欢迎使用「波波阅(mo)读(yu)神器器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：wx:bobokeji521";
     // textarea.value = "\n \n \n \n欢迎使用「波波摸鱼阅读器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：wx:bobokeji521";
   }
 

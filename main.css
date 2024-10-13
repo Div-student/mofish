@@ -21,39 +21,33 @@ body {
 }
 #nextChart{
   position: fixed;
-  bottom: 5px;
+  bottom: 40%;
   right: 5px;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 40px;
-  height: 40px;
+  width: 24px;
+  height: 24px;
 }
 #preChart{
   position: fixed;
-  bottom: 5px;
+  bottom: 40%;
   left: 5px;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 24px;
+  height: 24px;
 }
-#preChartInner{
-  width: 40px;
-  height: 40px;
-  background: rgb(0, 0, 0, .6);
+#preChartInner, #nextChartInner{
+  width: 24px;
+  height: 24px;
+  background: rgb(0, 0, 0, .5);
   text-align: center;
-  line-height: 40px;
-  border-radius: 20px;
-}
-#nextChartInner{
-  width: 40px;
-  height: 40px;
-  background: rgb(0, 0, 0, .6);
-  text-align: center;
-  line-height: 40px;
-  border-radius: 20px;
+  line-height: 24px;
+  border-radius: 12px;
 }
 .active{
   display: none;
