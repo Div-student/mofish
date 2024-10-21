@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>小说章节切换</title>
+  <style>
+    body{
+      font-size: 12px;
+      margin: 0;
+    }
+    #novalChapters{
+      width: 100%;
+      display: flex;
+      justify-content: flex-start;
+      flex-wrap: wrap; /* 允许换行 */
+    }
+    .novalChapter{
+      cursor: pointer;
+      text-decoration: underline;
+      max-width: 130px;
+      overflow: hidden; /* 隐藏溢出内容 */
+      white-space: nowrap; /* 不换行 */
+      text-overflow: ellipsis; /* 超出部分显示省略号 */
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div><span>请选择需要切换的章节:</span><span>:</span></div>
+    <div id="novalChapters" class="novalChapters"></div>
+  </div>
+  <script src="./novalChange.js"></script>
+</body>
+</html>

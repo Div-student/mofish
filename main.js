@@ -24,6 +24,9 @@ const createWindow = () => {
   })
   win.loadFile('index.html')
 
+  // 记录软件运行的平台系统类型
+  store.set("platform", process.platform)
+
   // 监听窗口大小变化事件
   win.on('resize', () => {
     const [width, height] = win.getSize();
@@ -40,8 +43,9 @@ const createWindow = () => {
 }
 
 // 创建设置弹窗
+let newWindow = null
 function createNewWindow() {
-  const newWindow = new BrowserWindow({
+  newWindow = new BrowserWindow({
     width: 500,
     // width: 1000,
     height: 380,
@@ -55,11 +59,18 @@ function createNewWindow() {
   });
 
   newWindow.loadFile('settings.html');
+
+  // 监听小说章节切换窗口事件
+  ipcMain.on('message-from-child1', (event, message) => {
+    console.log('Message from child1:', message);
+    newWindow.webContents.send('message-to-parent1', message);
+  });
+
   // newWindow.webContents.openDevTools();
 }
 
 // 创建激活窗口
-let tokenWindow = null 
+let novelWindowtokenWindow = null 
 function createTokenWindow() {
   tokenWindow = new BrowserWindow({
     width: 460,
@@ -76,6 +87,30 @@ function createTokenWindow() {
   tokenWindow.loadFile('validateToken.html');
   // tokenWindow.webContents.openDevTools();
 }
+
+// 创建小说切换窗口
+let novelWindow = null 
+function changeNovelWindow(novalName) {
+  novelWindow = new BrowserWindow({
+    width: 460,
+    height: 240,
+    parent: newWindow,
+    autoHideMenuBar:true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: true, // 确保 nodeIntegration 为 false
+    }
+  });
+  novelWindow.loadURL(`file://${__dirname}/novalChange.html?novalName=${novalName}`);
+  // novelWindow.webContents.openDevTools();
+}
+
+// 监听小说切换窗口事件
+ipcMain.on('novalChangeEvent', (event, message) => {
+  console.log('novalChangeEvent----:',message);
+  changeNovelWindow(message.openWindow)
+});
 
 // 监听关闭激活窗口的请求
 ipcMain.on('closeChildWindow', () => {

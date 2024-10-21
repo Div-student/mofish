@@ -4,12 +4,14 @@ let articals = {}
 let currentProcess = window.electronAPI.loadData('currentProcess') || {}; //获取当前小说阅读进度
 let storeData = window.electronAPI.loadData('mydata') || {}// 缓存小说章节内容数据
 let userProfile = window.electronAPI.loadData('userProfile') || {}; // 获取缓存个人设置数据
+let platformType = window.electronAPI.loadData('platform')
 
 // 获取页面dom元素
 let novalNameDom = document.getElementById('novalName')
 let novalChartDom = document.getElementById('novalChart')
 let novalProcessDom = document.getElementById('novalProcess')
 let readingContentDom = document.getElementById('readingContent')
+let mouseWrapDom = document.getElementById('mouseWrap')
 
 function ResetReadProcess(){
   console.log("storeData,fileName====>", storeData, fileName)
@@ -134,6 +136,14 @@ $('#wordSize').on('input', function() {
   window.electronAPI.sendMessageToParent({ wordSize:values });
 });
 
+// 监听鼠标速度设置输入框变化
+$('#mouseSpeed').on('input', function() {
+  let values = $(this).val();
+  userProfile.mouseSpeed = values
+  window.electronAPI.saveData('userProfile', userProfile);
+  window.electronAPI.sendMessageToParent({ mouseSpeed:values });
+});
+
 function setReadProcess(){
   if(!currentProcess.name) return;
   console.log("currentProcess===>", currentProcess)
@@ -155,14 +165,20 @@ function getAllNovalName(){
 }
 
 function changeNoval(novalName){
-  window.electronAPI.saveData('currentProcess', { name:novalName, chapter:"0", readPercent:0, scrollTop:0 });
-  // 重置当前阅读进度
-  novalNameDom.innerText = novalName
-  novalChartDom.innerText = "0"
-  novalProcessDom.innerText = 0 + "%"
-  window.electronAPI.sendMessageToParent({ changeNoval:novalName });
+  window.electronAPI.novalChangeEvent({"openWindow":novalName})
 }
 
+// 监听小说章节切换事件
+window.electronAPI.onMessageFromParent1((message) => {
+  let currentProcess = window.electronAPI.loadData('currentProcess')
+  console.log("currentProcess===>111", currentProcess)
+  if(message.changeNoval){ // 切换小说
+    novalNameDom.innerText = message.changeNoval
+    let chapterTemp = storeData[message.changeNoval][currentProcess.chapter]
+    novalChartDom.innerText = chapterTemp.length>1 ? chapterTemp[0]:"序章"
+    novalProcessDom.innerText = 0 + "%"
+  }
+});
 
 // 初始化页面配置
 function initPage(){
@@ -174,6 +190,10 @@ function initPage(){
   // 获取缓存中的字体大小
   let wordSize = userProfile?.wordSize || 14;
   $('#wordSize').val(wordSize);
+
+  // 获取缓存中鼠标滚动速度
+  let mouseSpeed = userProfile?.mouseSpeed || 14;
+  $('#mouseSpeed').val(mouseSpeed);
   
   // 获取缓存中小说的隐藏方式
   let radioMap = { "鼠标单击":"radio-1", "鼠标双击":"radio-2", "鼠标移入":"radio-3", "不隐藏":"radio-4" }
@@ -190,6 +210,11 @@ function initPage(){
   // 获取缓存中icon图标显示状态
   selectElement.value = userProfile?.statusBarIcon || "否"
 
+
+  // 非windows系统暂时不支持滚动速度设置
+  if(platformType != "win32"){
+    mouseWrapDom.style = "display: none;"
+  }
 }
 initPage()
 

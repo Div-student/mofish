@@ -18,6 +18,7 @@ body {
   background: transparent;
   border:none;
   will-change: transform;
+  scroll-behavior: smooth;
 }
 #nextChart{
   position: fixed;
