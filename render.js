@@ -19,7 +19,6 @@ window.electronAPI.onMessageFromParent((message) => {
     data = window.electronAPI.loadData('mydata')
     currentProcess = window.electronAPI.loadData('currentProcess')
     textarea.scrollTop = 0 // 重置阅读进度
-    // textarea.value = data[currentProcess.name][currentProcess.chapter];
     textarea.innerHTML = data[currentProcess.name][currentProcess.chapter];
   }else if(message.wordColor){
     nextChart.setAttribute("style",`color:${message.wordColor}`)
@@ -49,36 +48,44 @@ window.electronAPI.onMessageFromParent((message) => {
 titlebar.addEventListener("mouseenter", ()=>{
   if(userProfileData?.showupWay == "鼠标移入"){
     textarea.setAttribute("class", "")
-    nextChartInner.setAttribute("class", "")
-    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("click", ()=>{
   if(userProfileData?.showupWay == "鼠标单击"){
     textarea.setAttribute("class", "")
-    nextChartInner.setAttribute("class", "")
-    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("dblclick", ()=>{
   if(userProfileData?.showupWay == "鼠标双击"){
     textarea.setAttribute("class", "")
-    nextChartInner.setAttribute("class", "")
-    preChartInner.setAttribute("class", "")
   }
 })
 titlebar.addEventListener("mouseleave", ()=>{
   if(userProfileData?.showupWay && userProfileData.showupWay != "不隐藏"){
     textarea.setAttribute("class", "hiden")
-    nextChartInner.setAttribute("class", "hiden")
-    preChartInner.setAttribute("class", "hiden")
   }
 })
+
+nextChart.addEventListener("mouseleave", ()=>{
+  nextChart.setAttribute("class", "hidens")
+})
+preChart.addEventListener("mouseleave", ()=>{
+  preChart.setAttribute("class", "hidens")
+})
+nextChart.addEventListener("mouseenter", ()=>{
+  nextChart.setAttribute("class", "")
+  nextChartInner.setAttribute("class", "")
+})
+preChart.addEventListener("mouseenter", ()=>{
+  preChart.setAttribute("class", "")
+  preChartInner.setAttribute("class", "")
+})
+
 
 
 // 设置滚动速度，可以根据需求调整
 textarea.addEventListener('wheel', (event) => {
-  if(platformType != "win32") return
+  if(platformType != "win32" || !userProfileData?.mouseSpeed) return // 设置为0或者非windows系统时不设置滚动速度
   let scrollSpeed = userProfileData.mouseSpeed || 10; 
   event.preventDefault(); // 阻止默认滚动行为
   // 根据滚动方向调整滚动距离
@@ -144,7 +151,6 @@ function initPage(){
     textarea.innerHTML = data[currentProcess.name]?.[currentProcess.chapter];
   }else{
     textarea.innerHTML = "\n \n \n \n欢迎使用「波波阅(mo)读(yu)神器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：微信:bobokeji521";
-    // textarea.value = "\n \n \n \n欢迎使用「波波摸鱼阅读器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：wx:bobokeji521";
   }
 
   // 获取缓存中的背景透明度

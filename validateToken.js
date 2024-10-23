@@ -81,6 +81,7 @@ E73BPOwXueJ3wlVXEjzJbV0=
     // 判断是否是生效密钥对应的电脑
     if(decrypTemp[1] !== generateMachKey()){
       validateInfo["someMachinFlag"] = false
+      validateInfo["error"] = 3; // 机器与验证码不匹配
     }else if(date1 < date2){
       validateInfo["error"] = 1; // 已过有效期
       validateInfo["validateDate"] = decrypTemp[0]

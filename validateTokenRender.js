@@ -29,10 +29,13 @@ identityBtnDom.addEventListener("click", async()=>{
     alert("请输入您的验证码！")
   }else{
     let activeRes = await window.electronAPI.activeAppToken(identityContentDom.value)
+    console.log('activeRes====>:', activeRes);
     if(activeRes.error == 1){
       alert(`激活失败！已过有效期，有效期至:${activeRes.validateDate}`)
     }else if(activeRes.error == 2){
       alert("激活失败：激活码有误")
+    }else if(activeRes.error == 3){
+      alert("激活失败：激活码和本机器不匹配")
     }else{
       alert(`您已成功激活，有效期至:${activeRes.validateDate}`)
       await window.electronAPI.closeChildWindow()

@@ -83,7 +83,6 @@ function createTokenWindow() {
       nodeIntegration: true // 确保 nodeIntegration 为 false
     }
   });
-
   tokenWindow.loadFile('validateToken.html');
   // tokenWindow.webContents.openDevTools();
 }

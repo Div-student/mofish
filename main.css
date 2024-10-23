@@ -7,6 +7,10 @@ body {
 .hiden{
   visibility: hidden;
 }
+.hidens{
+  opacity: 0; /* 设置为透明 */
+  pointer-events: auto; /* 允许接收事件 */
+}
 #setBtn{
   /* -webkit-app-region: no-drag; */
   cursor: pointer;
@@ -22,25 +26,27 @@ body {
 }
 #nextChart{
   position: fixed;
-  bottom: 40%;
-  right: 5px;
+  right: 0px;
+  bottom: 0;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 24px;
-  height: 24px;
+  height: 100vh;
+  /* background-color: red; */
 }
 #preChart{
   position: fixed;
-  bottom: 40%;
-  left: 5px;
+  left: 0px;
+  bottom: 0;
   cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 24px;
-  height: 24px;
+  height: 100vh;
+  /* background-color: red; */
 }
 #preChartInner, #nextChartInner{
   width: 24px;
@@ -73,3 +79,4 @@ textarea:focus-visible {
   background: rgba(0,0, 0, .01);
   will-change: transform;
 }
+
