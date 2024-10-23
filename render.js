@@ -85,8 +85,9 @@ preChart.addEventListener("mouseenter", ()=>{
 
 // 设置滚动速度，可以根据需求调整
 textarea.addEventListener('wheel', (event) => {
-  if(platformType != "win32" || !userProfileData?.mouseSpeed) return // 设置为0或者非windows系统时不设置滚动速度
-  let scrollSpeed = userProfileData.mouseSpeed || 10; 
+  let scrollSpeed = userProfileData?.mouseSpeed || "0"; 
+  if(platformType != "win32" || !Number(scrollSpeed)) return // 设置为0或者非windows系统时不设置滚动速度
+  
   event.preventDefault(); // 阻止默认滚动行为
   // 根据滚动方向调整滚动距离
   const delta = Math.sign(event.deltaY);

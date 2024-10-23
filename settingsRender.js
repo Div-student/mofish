@@ -192,7 +192,7 @@ function initPage(){
   $('#wordSize').val(wordSize);
 
   // 获取缓存中鼠标滚动速度
-  let mouseSpeed = userProfile?.mouseSpeed || 14;
+  let mouseSpeed = userProfile?.mouseSpeed || 0;
   $('#mouseSpeed').val(mouseSpeed);
   
   // 获取缓存中小说的隐藏方式
