@@ -38,10 +38,17 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
       let reg = /((正文){0,1}(第)([零〇一二三四五六七八九十百千万a-zA-Z0-9]{1,7})[章节卷集部篇回](( {1,}).)((?!\t{1,4}).){0,30})\r?\n/g
       
       let res = data.replace(reg,"@@@$1@@+").split("@@@")
-     
+      let plainRow = /([\n\r])([\n\r]+)/g
       res.forEach((element,index) => {
         let chatContent = element.split("@@+")
-        articals[index] = chatContent
+        let tempArray = []
+        if(chatContent[0]){
+          tempArray.push(chatContent[0].replace(plainRow, "$1"))
+        }
+        if(chatContent[1]){
+          tempArray.push(chatContent[1].replace(plainRow, "$1"))
+        }
+        articals[index] = tempArray
       });
     
       if( storeData && storeData[fileName]){
