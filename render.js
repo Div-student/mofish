@@ -68,17 +68,23 @@ titlebar.addEventListener("mouseleave", ()=>{
 
 nextChart.addEventListener("mouseleave", ()=>{
   nextChart.setAttribute("class", "hidens")
+  preChart.setAttribute("class", "hidens")
 })
 preChart.addEventListener("mouseleave", ()=>{
   preChart.setAttribute("class", "hidens")
+  nextChart.setAttribute("class", "hidens")
 })
 nextChart.addEventListener("mouseenter", ()=>{
   nextChart.setAttribute("class", "")
   nextChartInner.setAttribute("class", "")
+  preChart.setAttribute("class", "")
+  preChartInner.setAttribute("class", "")
 })
 preChart.addEventListener("mouseenter", ()=>{
   preChart.setAttribute("class", "")
   preChartInner.setAttribute("class", "")
+  nextChart.setAttribute("class", "")
+  nextChartInner.setAttribute("class", "")
 })
 
 

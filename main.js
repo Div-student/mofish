@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, screen, Tray} = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Menu, screen, Tray, globalShortcut } = require('electron')
 const path = require('path') ;
 const Store = require('electron-store');
 const { validateToken, generateMachKey, generateDateToken, activeAppCert } = require('./validateToken')
@@ -10,7 +10,6 @@ const createWindow = () => {
   let windowSizeRes = store.get("windowSize")
   win = new BrowserWindow({
     width: windowSizeRes?.width || 460,
-    // width: 1000,
     height: windowSizeRes?.height || 240,
     frame:false,
     alwaysOnTop: true, // 设置窗口始终位于顶层
@@ -132,14 +131,30 @@ ipcMain.handle('select-file', async () => {
 
 app.whenReady().then(() => {
   createWindow()
+  const ret = globalShortcut.register('CommandOrControl+Shift+O', () => {
+    createNewWindow();
+  });
+
+  if (!ret) {
+    console.log('注册快捷键失败');
+  }
+
+  // 检查当前注册的快捷键
+  console.log(globalShortcut.isRegistered('CommandOrControl+Shift+O'));
+
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0)  createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+// 退出时注销快捷键
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+});
 
 ipcMain.on('open-set-window', () => {
   createNewWindow();
@@ -181,7 +196,7 @@ ipcMain.handle('activeAppToken',  (event, message) => {
 // 自定义右键菜单
 const contextMenu = Menu.buildFromTemplate([
   {
-    label: '设置',
+    label: `设置(${process.platform == "darwin"?"command":"ctrl"}+shift+O)`,
     click: () => {
       win.webContents.send('clickSetting', null);
     },
