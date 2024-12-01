@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, dialog, Menu, screen, Tray, globalShortcut 
 const path = require('path') ;
 const Store = require('electron-store');
 const { validateToken, generateMachKey, generateDateToken, activeAppCert } = require('./validateToken')
+const pdf = require('pdf-parse');
+const  fs = require('fs');
 
 const store = new Store();
 let win = null
@@ -123,7 +125,7 @@ ipcMain.handle('select-file', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
     filters: [
-      { name: 'Text Files', extensions: ['txt'] }
+      { name: 'Text Files', extensions: ['txt', 'epub', 'pdf'] }
     ]
   });
   return result.filePaths;
@@ -178,6 +180,17 @@ ipcMain.on('message-from-child', (event, message) => {
   }
   win.webContents.send('message-to-parent', message);
 });
+
+// 监听pdf文件转换请求
+ipcMain.on( 'prefix-convert-pdf', ( event, file_base_path ) => {
+  let dataBuffer = fs.readFileSync(file_base_path);
+ 
+  pdf(dataBuffer).then(function(data) {
+    newWindow.webContents.send('onMessagePdf', data.text);
+  });
+});
+
+
 
 // 获取机器唯一编码
 ipcMain.handle('getMachinID',  () => {

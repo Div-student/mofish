@@ -14,7 +14,6 @@ let readingContentDom = document.getElementById('readingContent')
 let mouseWrapDom = document.getElementById('mouseWrap')
 
 function ResetReadProcess(){
-  console.log("storeData,fileName====>", storeData, fileName)
   storeData[fileName] = articals
   novalNameDom.innerText = fileName
   novalChartDom.innerText = "0"
@@ -25,37 +24,56 @@ function ResetReadProcess(){
   window.electronAPI.sendMessageToParent({type:"importData"});
 }
 
+// 读取txt文件
+function getTxtFile(data){
+  let reg = /((正文){0,1}(第)([零〇一二三四五六七八九十百千万a-zA-Z0-9]{1,7})[章节卷集部篇回](( {1,}).)((?!\t{1,4}).){0,30})\r?\n/g
+  let res = data.replace(reg,"@@@$1@@+").split("@@@")
+  let plainRow = /([\n\r])([\n\r]+)/g
+  res.forEach((element,index) => {
+    let chatContent = element.split("@@+")
+    let tempArray = []
+    if(chatContent[0]){
+      tempArray.push(chatContent[0].replace(plainRow, "$1"))
+    }
+    if(chatContent[1]){
+      tempArray.push(chatContent[1].replace(plainRow, "$1"))
+    }
+    articals[index] = tempArray
+  });
+}
+
+window.electronAPI.onMessagePdf((message)=>{
+  // console.log("pdf message ===>", message)
+  getTxtFile(message)
+  if( storeData && storeData[fileName]){
+    // 如果小说已经导入过，则弹窗确认是否覆盖
+    $( "#dialog-confirm" ).dialog( "open" );
+  }else{
+    ResetReadProcess()
+    getAllNovalName() // 更新可切换小说列表
+  }
+})
+
 document.getElementById('readFileButton').addEventListener('click', async () => {
   const filePaths = await window.electronAPI.selectFile();
   storeData = window.electronAPI.loadData('mydata') || {}
+  console.log("filePaths===>", filePaths)
   if (filePaths.length > 0) {
     const filePath = filePaths[0]; // 替换为你的文件路径
     try {
       let fileNamePath = filePath.match(/[^\\/]+$/);
       fileName = fileNamePath[0].split('.')[0]
-      console.log("fileName===>", fileName[0].split('.')[0])
-      const data = await window.electronAPI.readFile(filePath);
-      let reg = /((正文){0,1}(第)([零〇一二三四五六七八九十百千万a-zA-Z0-9]{1,7})[章节卷集部篇回](( {1,}).)((?!\t{1,4}).){0,30})\r?\n/g
-      
-      let res = data.replace(reg,"@@@$1@@+").split("@@@")
-      let plainRow = /([\n\r])([\n\r]+)/g
-      res.forEach((element,index) => {
-        let chatContent = element.split("@@+")
-        let tempArray = []
-        if(chatContent[0]){
-          tempArray.push(chatContent[0].replace(plainRow, "$1"))
-        }
-        if(chatContent[1]){
-          tempArray.push(chatContent[1].replace(plainRow, "$1"))
-        }
-        articals[index] = tempArray
-      });
-    
+      fileType = fileNamePath[0].split('.')[1]
+      console.log("fileType===>", fileType)
+      const data = await window.electronAPI.readFile(filePath, fileType);
+      articals = { ...data }
+      console.log("storeData===>", storeData[fileName])
+      // 设置当前小说章节
+      if(fileType === "pdf") return
       if( storeData && storeData[fileName]){
         // 如果小说已经导入过，则弹窗确认是否覆盖
         $( "#dialog-confirm" ).dialog( "open" );
       }else{
-        // 设置当前小说章节
         ResetReadProcess()
         getAllNovalName() // 更新可切换小说列表
       }

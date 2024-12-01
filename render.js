@@ -75,16 +75,22 @@ preChart.addEventListener("mouseleave", ()=>{
   nextChart.setAttribute("class", "hidens")
 })
 nextChart.addEventListener("mouseenter", ()=>{
-  nextChart.setAttribute("class", "")
-  nextChartInner.setAttribute("class", "")
-  preChart.setAttribute("class", "")
-  preChartInner.setAttribute("class", "")
+  let classRes = textarea.getAttribute('class')
+  if(!classRes){
+    nextChart.setAttribute("class", "")
+    nextChartInner.setAttribute("class", "")
+    preChart.setAttribute("class", "")
+    preChartInner.setAttribute("class", "")
+  }
 })
 preChart.addEventListener("mouseenter", ()=>{
-  preChart.setAttribute("class", "")
-  preChartInner.setAttribute("class", "")
-  nextChart.setAttribute("class", "")
-  nextChartInner.setAttribute("class", "")
+  let classRes = textarea.getAttribute('class')
+  if(!classRes){
+    preChart.setAttribute("class", "")
+    preChartInner.setAttribute("class", "")
+    nextChart.setAttribute("class", "")
+    nextChartInner.setAttribute("class", "")
+  }
 })
 
 
@@ -122,15 +128,18 @@ textarea.addEventListener('scroll', () => {
 // 点击下一章节
 nextChart.addEventListener("click", ()=>{
   // 切换主页正在阅读的小说章节
-  if(!currentProcess.name){alert("请先导入小说！")}else{
-    if(data[currentProcess.name][ Number(currentProcess.chapter) + 1]){
-      textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) + 1];
-      textarea.scrollTop = 0
-      // 修改当前小说阅读进度
-      currentProcess.chapter = Number(currentProcess.chapter) + 1
-      window.electronAPI.saveData('currentProcess', currentProcess);
-    }else{
-      alert("当前章节已是最后章节！")
+  let classRes = textarea.getAttribute('class')
+  if(!classRes){
+    if(!currentProcess.name){alert("请先导入小说！")}else{
+      if(data[currentProcess.name][ Number(currentProcess.chapter) + 1]){
+        textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) + 1];
+        textarea.scrollTop = 0
+        // 修改当前小说阅读进度
+        currentProcess.chapter = Number(currentProcess.chapter) + 1
+        window.electronAPI.saveData('currentProcess', currentProcess);
+      }else{
+        alert("当前章节已是最后章节！")
+      }
     }
   }
 }) 
@@ -138,14 +147,17 @@ nextChart.addEventListener("click", ()=>{
 // 点击上一章节
 preChart.addEventListener("click", ()=>{
   // 切换主页正在阅读的小说章节
-  if(!currentProcess.name){alert("请先导入小说！")}else{
-    if(Number(currentProcess.chapter)>0){
-      textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) - 1];
-      textarea.scrollTop = 0
-      currentProcess.chapter = Number(currentProcess.chapter) - 1
-      window.electronAPI.saveData('currentProcess', currentProcess);
-    }else{
-      alert("当前章节已是最开始章节！")
+  let classRes = textarea.getAttribute('class')
+  if(!classRes){
+    if(!currentProcess.name){alert("请先导入小说！")}else{
+      if(Number(currentProcess.chapter)>0){
+        textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) - 1];
+        textarea.scrollTop = 0
+        currentProcess.chapter = Number(currentProcess.chapter) - 1
+        window.electronAPI.saveData('currentProcess', currentProcess);
+      }else{
+        alert("当前章节已是最开始章节！")
+      }
     }
   }
 }) 
