@@ -5,10 +5,12 @@ const { validateToken, generateMachKey, generateDateToken, activeAppCert } = req
 const pdf = require('pdf-parse');
 const  fs = require('fs');
 
+const getNovalUtils = require('./getNovalUtils.js')
+
 const store = new Store();
 let win = null
 let tray = null
-const createWindow = () => {
+const createWindow = async() => {
   let windowSizeRes = store.get("windowSize")
   win = new BrowserWindow({
     width: windowSizeRes?.width || 460,
@@ -41,6 +43,13 @@ const createWindow = () => {
   }
   
   // win.webContents.openDevTools();
+
+  
+  
+
+  // let novalList = await getNovalUtilsMap.searchNoval("东莞往事")
+  // console.log("novalList====>", novalList)
+  // getNovalUtilsMap.getNovalContent("https://www.tadu.com/getPartContentByCodeTable/1003880/1")
 }
 
 // 创建设置弹窗
@@ -65,6 +74,7 @@ function createNewWindow() {
   ipcMain.on('message-from-child1', (event, message) => {
     console.log('Message from child1:', message);
     newWindow.webContents.send('message-to-parent1', message);
+    novelWindow.close()
   });
 
   // newWindow.webContents.openDevTools();
@@ -106,10 +116,45 @@ function changeNovelWindow(novalName) {
   // novelWindow.webContents.openDevTools();
 }
 
+
+// 创建线上小说导入窗口
+let onlineNovelWindow = null 
+let getNovalUtilsMap = null
+function createOnlineNovelWindow(novalName) {
+  onlineNovelWindow = new BrowserWindow({
+    width: 700,
+    height: 400,
+    parent: newWindow,
+    autoHideMenuBar:true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: true, // 确保 nodeIntegration 为 false
+    }
+  });
+  onlineNovelWindow.loadFile('onlineNovel.html');
+
+  getNovalUtilsMap = new getNovalUtils({
+    searchNovaUrl: "https://www.tadu.com/search",
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body:"query=${novalName}"
+  }, {
+    chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
+  })
+
+  onlineNovelWindow.webContents.openDevTools();
+}
+
 // 监听小说切换窗口事件
 ipcMain.on('novalChangeEvent', (event, message) => {
   console.log('novalChangeEvent----:',message);
   changeNovelWindow(message.openWindow)
+});
+
+// 监听线上小说导入窗口事件
+ipcMain.on('onlineNovalImport', (event, message) => {
+  createOnlineNovelWindow()
 });
 
 // 监听关闭激活窗口的请求
@@ -173,13 +218,32 @@ ipcMain.on('message-from-child', (event, message) => {
     }
   }else if(process.platform == "win32"){ // 判断是否为windows系统
     if(message.statusBarIcon == "是"){
-      win.setSkipTaskbar(false)
-    }else if(message.statusBarIcon == "否"){
       win.setSkipTaskbar(true)
+    }else if(message.statusBarIcon == "否"){
+      win.setSkipTaskbar(false)
     }
   }
   win.webContents.send('message-to-parent', message);
 });
+
+// 监听所有从子窗口发送的消息
+ipcMain.on('message-from-win', async (event, message) => {
+  console.log('Message from win:', message);
+  if(message.windowName == "onlineNovelWindow"){
+    // console.log("message.data.novelName====>", message.data.novelName)
+   if(message.action == "searchNovel"){
+    let novalList = await getNovalUtilsMap.searchNoval(message.data.novelName)
+    message.data.novelList = novalList
+   }else if(message.action == "getChapterList"){
+    let chapterList = await getNovalUtilsMap.getNovalChapterList(message.data.bookId)
+    // console.log("chapterList====>", chapterList)
+    getNovalUtilsMap.getNovalContent("https://www.tadu.com/getPartContentByCodeTable/1003880/600")
+    message.data.chapterList = chapterList
+   }
+   
+   onlineNovelWindow.webContents.send('message-to-win', message);
+  }
+})
 
 // 监听pdf文件转换请求
 ipcMain.on( 'prefix-convert-pdf', ( event, file_base_path ) => {
@@ -189,8 +253,6 @@ ipcMain.on( 'prefix-convert-pdf', ( event, file_base_path ) => {
     newWindow.webContents.send('onMessagePdf', data.text);
   });
 });
-
-
 
 // 获取机器唯一编码
 ipcMain.handle('getMachinID',  () => {

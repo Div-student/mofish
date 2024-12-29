@@ -131,10 +131,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   activeAppToken: (message) => ipcRenderer.invoke('activeAppToken', message), // 激活验证码
   closeChildWindow: () => ipcRenderer.send('closeChildWindow'), // 关闭授权弹窗 
   novalChangeEvent: (message) => ipcRenderer.send('novalChangeEvent',message), // 小说切换窗口事件
+  onlineNovalImport: (message) => ipcRenderer.send('onlineNovalImport',message), // 线上小说导入事件
   sendMessageToParent1: (message) => ipcRenderer.send('message-from-child1', message),
   onMessageFromParent1: (callback) => ipcRenderer.on('message-to-parent1', (event, message) => {
     callback(message)}),
   onMessagePdf: (callback) => ipcRenderer.on('onMessagePdf', (event, message) => {
     callback(message)}),
+  sendMsgToWindow: (message) => ipcRenderer.send('message-from-win', message), // 发送消息给窗口
+  onMsgFromWindow: (callback) => ipcRenderer.on('message-to-win', (event, message) => {
+    callback(message)}), // 接收窗口消息
 });
 

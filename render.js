@@ -10,6 +10,7 @@ let data = window.electronAPI.loadData('mydata') || {};
 let currentProcess = window.electronAPI.loadData('currentProcess') || {};
 let userProfileData = window.electronAPI.loadData('userProfile') || {};
 let platformType = window.electronAPI.loadData('platform')
+let chapterReadProcess = window.electronAPI.loadData('chapterReadProcess') || {}
 
 
 // 监听设置弹窗的配置事件
@@ -40,7 +41,7 @@ window.electronAPI.onMessageFromParent((message) => {
     console.log("刷新缓存数据=====>", currentProcess)
     data = window.electronAPI.loadData('mydata')
     textarea.innerHTML = data[message.changeNoval][currentProcess.chapter];
-    textarea.scrollTop = 0 // 重置阅读进度
+    textarea.scrollTop = currentProcess.scrollTop // 重置阅读进度
   }
 });
 
@@ -125,18 +126,59 @@ textarea.addEventListener('scroll', () => {
   window.electronAPI.saveData('currentProcess', currentProcess);
 });
 
+function savaReadProcess(){
+  // 切换之前先将当前进度保存到对应的小说章节
+  chapterReadProcess[currentProcess.name] = chapterReadProcess[currentProcess.name] || {} // 当小说不存在时，先创建一个空对象
+  chapterReadProcess[currentProcess.name][currentProcess.chapter]= {
+    readPercent: currentProcess.readPercent,
+    scrollTop: currentProcess.scrollTop
+  }
+  window.electronAPI.saveData("chapterReadProcess", chapterReadProcess)
+}
+
+function changeNovalChapter(chapter){
+  // 判断要切换的章节是否缓存了阅读进度，如果有责把当前进度更新为要切换章节的进度，否则重置当前进度
+  let novalChapterReadProcess = chapterReadProcess[currentProcess.name]?.[chapter]
+  textarea.innerHTML = data[currentProcess.name][chapter];
+  if(!novalChapterReadProcess){
+    textarea.scrollTop = 0
+    currentProcess.scrollTop = 0
+    currentProcess.readPercent = 0
+  }else{
+    textarea.scrollTop = novalChapterReadProcess.scrollTop
+    currentProcess.scrollTop = novalChapterReadProcess.scrollTop
+    currentProcess.readPercent = novalChapterReadProcess.readPercent
+  }
+  currentProcess.chapter = chapter
+  window.electronAPI.saveData('currentProcess', currentProcess);
+}
+
 // 点击下一章节
 nextChart.addEventListener("click", ()=>{
   // 切换主页正在阅读的小说章节
   let classRes = textarea.getAttribute('class')
   if(!classRes){
-    if(!currentProcess.name){alert("请先导入小说！")}else{
+    if(!currentProcess.name){
+      alert("请先导入小说！")
+    }else{
+      savaReadProcess()
       if(data[currentProcess.name][ Number(currentProcess.chapter) + 1]){
-        textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) + 1];
-        textarea.scrollTop = 0
-        // 修改当前小说阅读进度
-        currentProcess.chapter = Number(currentProcess.chapter) + 1
-        window.electronAPI.saveData('currentProcess', currentProcess);
+        // 判断要切换的章节是否缓存了阅读进度，如果有责把当前进度更新为要切换章节的进度，否则重置当前进度
+        let chapter = Number(currentProcess.chapter) + 1
+        changeNovalChapter(chapter)
+        // let novalChapterReadProcess = chapterReadProcess[currentProcess.name]?.[chapter]
+        // textarea.innerHTML = data[currentProcess.name][chapter];
+        // if(!novalChapterReadProcess){
+        //   textarea.scrollTop = 0
+        //   currentProcess.scrollTop = 0
+        //   currentProcess.readPercent = 0
+        // }else{
+        //   textarea.scrollTop = novalChapterReadProcess.scrollTop
+        //   currentProcess.scrollTop = novalChapterReadProcess.scrollTop
+        //   currentProcess.readPercent = novalChapterReadProcess.readPercent
+        // }
+        // currentProcess.chapter = chapter
+        // window.electronAPI.saveData('currentProcess', currentProcess);
       }else{
         alert("当前章节已是最后章节！")
       }
@@ -149,12 +191,17 @@ preChart.addEventListener("click", ()=>{
   // 切换主页正在阅读的小说章节
   let classRes = textarea.getAttribute('class')
   if(!classRes){
-    if(!currentProcess.name){alert("请先导入小说！")}else{
+    if(!currentProcess.name){
+      alert("请先导入小说！")
+    }else{
+      savaReadProcess()
       if(Number(currentProcess.chapter)>0){
-        textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) - 1];
-        textarea.scrollTop = 0
-        currentProcess.chapter = Number(currentProcess.chapter) - 1
-        window.electronAPI.saveData('currentProcess', currentProcess);
+        let chapter = Number(currentProcess.chapter) - 1
+        changeNovalChapter(chapter)
+        // textarea.innerHTML = data[currentProcess.name][ Number(currentProcess.chapter) - 1];
+        // textarea.scrollTop = 0
+        // currentProcess.chapter = Number(currentProcess.chapter) - 1
+        // window.electronAPI.saveData('currentProcess', currentProcess);
       }else{
         alert("当前章节已是最开始章节！")
       }

@@ -192,6 +192,11 @@ function getAllNovalName(){
 function changeNoval(novalName){
   window.electronAPI.novalChangeEvent({"openWindow":novalName})
 }
+// 在线小说导入事件
+function onlineNoval(){
+  console.log("onlineNoval===>121212121")
+  window.electronAPI.onlineNovalImport()
+}
 
 // 监听小说章节切换事件
 window.electronAPI.onMessageFromParent1((message) => {
@@ -201,7 +206,7 @@ window.electronAPI.onMessageFromParent1((message) => {
     novalNameDom.innerText = message.changeNoval
     let chapterTemp = storeData[message.changeNoval][currentProcess.chapter]
     novalChartDom.innerText = chapterTemp.length>1 ? chapterTemp[0]:"序章"
-    novalProcessDom.innerText = 0 + "%"
+    novalProcessDom.innerText = currentProcess.readPercent + "%"
   }
 });
 

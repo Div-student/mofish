@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>小说搜索</title>
+  <style>
+    body {
+      font-size: 12px;
+      margin: 0;
+      padding: 10px;
+      overflow: hidden;
+    }
+    #searchContainer {
+      width: 100%;
+      flex-wrap: wrap;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #searchBox {
+      width: 80%;
+      height: 30px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 5px;
+    }
+    #searchButton {
+      height: 30px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: #fff;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    #searchResults {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      margin-top: 20px;
+      grid-gap: 10px;
+      justify-content: start;
+      overflow: auto;
+      height: 80vh;
+    }
+    .novelItem {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .novelCover {
+      width: 50px;
+      height: 70px;
+      margin-right: 10px;
+    }
+    .novelInfo {
+      flex: 1;
+    }
+    .novelTitle {
+      font-weight: bold;
+      margin-bottom: 5px;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: bold;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .novelAuthor {
+      font-size: 12px;
+      color: #666;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+    .modal {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      position: relative;
+      background-color: #fefefe;
+      padding: 0 10px;
+      border: 1px solid #888;
+      width: 80%;
+      height: 50%;
+      overflow: auto;
+    }
+    .header{
+      position: fixed;
+      width: 80%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: white;
+      height: 25px;
+    }
+    .close {
+      color: #aaa;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .download{
+      color: #007BFF;
+      cursor: pointer;;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #chapterList {
+      display: grid;
+      padding: 0;
+      margin: 25px 0 0 0;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-gap: 10px;
+      justify-content: start;
+      overflow: auto;
+    }
+    .charpterItem{
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: linear-gradient(to right, #ff0000 0%, #ffff00 50%, #00ff00 100%);
+    }
+  </style>
+</head>
+<body>
+  <div id="searchContainer">
+    <input type="text" id="searchBox" placeholder="请输入小说名称">
+    <button id="searchButton">搜索</button>
+  </div>
+  <div id="searchResults"></div>
+  <div id="myModal" class="modal">
+    <div class="modal-content">
+      <div class="header">
+        <span class="download">下载⏬</span>
+        <span class="close">&times;</span>
+      </div>
+      <ul id="chapterList"></ul>
+    </div>
+  </div>
+  <script>
+    // 给搜索按钮添加点击事件
+    document.getElementById("searchButton").addEventListener("click", async () => {
+      const query = document.getElementById("searchBox").value;
+      window.electronAPI.sendMsgToWindow({
+        windowName: 'onlineNovelWindow',
+        action:'searchNovel',
+        data:{
+          novelName:query
+        }
+      })
+    });
+
+    // 监听主进程发送的消息
+    window.electronAPI.onMsgFromWindow((msg)=>{
+      console.log("11111===>")
+      console.log('receiveMsgFromWindow',msg)
+      if(msg.action === 'searchNovel'){
+        let result = msg.data.novelList.map((item)=>{
+          return {
+            title:item.name,
+            author:item.bookAuthor,
+            cover:item.imgUrl,
+            bookCatagory:item.bookCatagory,
+            bookStatus:item.bookStatus,
+            bookId:item.bookId,
+          }
+        })
+        displayResults(result)
+      }
+    })
+
+    // 显示搜索结果
+    function displayResults(results) {
+      const searchResults = document.getElementById("searchResults");
+      searchResults.innerHTML = "";
+      results.forEach((novel) => {
+        const novelItem = document.createElement("div");
+        novelItem.classList.add("novelItem");
+        novelItem.innerHTML = `
+          <img class="novelCover" src="${novel.cover}" alt="${novel.title}">
+          <div class="novelInfo">
+            <div class="novelTitle" title="${novel.title}">${novel.title}</div>
+            <div class="novelAuthor">${novel.bookCatagory}</div>
+            <div class="novelAuthor">${novel.bookStatus}</div>
+            <div class="novelAuthor">作者:${novel.author}</div>
+          </div>
+        `;
+        novelItem.addEventListener("click", () => {
+          showChapterList(novel.bookId);
+        });
+        searchResults.appendChild(novelItem);
+      });
+    }
+
+    // 显示章节列表
+    function showChapterList(bookId) {
+      const modal = document.getElementById("myModal");
+      const chapterList = document.getElementById("chapterList");
+      chapterList.innerHTML = "";
+      // 发送消息给主进程，请求章节列表
+      window.electronAPI.sendMsgToWindow({
+        windowName: 'onlineNovelWindow',
+        action:'getChapterList',
+        data:{
+          bookId:bookId
+        }
+      })
+      chapterList.innerHTML = `
+        <li class="charpterItem">第一章：3333</li>
+        <li class="charpterItem">第二章：3333</li>
+        <li class="charpterItem">第三章：3333</li>
+        <li class="charpterItem">第四章：3333</li>
+        <li class="charpterItem">第五章：3333</li>
+        <li class="charpterItem">第六章：3333</li>
+        <li class="charpterItem">第一章：3333</li>
+        <li class="charpterItem">第二章：3333</li>
+        <li class="charpterItem">第三章：3333</li>
+        <li class="charpterItem">第四章：3333</li>
+        <li class="charpterItem">第五章：3333</li>
+        <li class="charpterItem">第六章：3333</li>
+        <li class="charpterItem">第一章：3333</li>
+        <li class="charpterItem">第二章：3333</li>
+        <li class="charpterItem">第三章：3333</li>
+        <li class="charpterItem">第四章：3333</li>
+        <li class="charpterItem">第五章：3333</li>
+        <li class="charpterItem">第六章：3333</li>
+        `;
+
+      modal.style.display = "flex";
+      const closeBtn = document.getElementsByClassName("close")[0];
+      closeBtn.onclick = function() {
+        modal.style.display = "none";
+      }
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      }
+    }
+
+  </script>
+</body>
+</html>

@@ -88,6 +88,9 @@
       white-space: nowrap; /* 不换行 */
       text-overflow: ellipsis; /* 超出部分显示省略号 */
     }
+    #readFileButton, #readOnlineFile{
+      margin-right: 10px
+    }
   </style>
 </head>
 <body>
@@ -100,7 +103,7 @@
   <div id="accordion">
     <h3>小说设置</h3>
     <div>
-      <div><button id="readFileButton">导入小说</button></div>
+      <div><button id="readFileButton">导入本地小说</button><button id="readOnlineFile" onclick="onlineNoval()">导入线上小说</button></div>
       <div class="readingProcess">
         <span>当前正在阅读：</span><span id="novalName">无</span><span>阅读章节：</span><span id="novalChart">第0章 无</span><span>阅读进度：</span><span id="novalProcess">0%</span>
       </div>
