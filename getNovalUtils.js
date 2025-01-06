@@ -1,5 +1,6 @@
 // const axios = require('axios');
 const cheerio = require('cheerio');
+const eventBus = require('./eventCenter');
 
 module.exports = class getNovalUtils {
   arr = [];
@@ -32,7 +33,9 @@ module.exports = class getNovalUtils {
         const $ = cheerio.load(data);
         let novalObj = {};
         $(".bookList .lastLine").each((index, elementList) => {
-          novalObj = {};
+          novalObj = {
+            bookSource:"塔读网"
+          };
           $(".bookNm", elementList).each((index, element) => {
             novalObj.name = $(element).text();
           })
@@ -52,7 +55,7 @@ module.exports = class getNovalUtils {
             novalObj.bookDesc = $(element).text();
           })
           $(".bookImg img", elementList).each((index, element1) => {
-            novalObj.imgUrl = $(element1).attr("src");
+            novalObj.imgUrl = $(element1).attr("data-src");
           })
           $(".bookrackBtn", elementList).each((index, element) => {
             novalObj.bookId = $(element).attr("data-bookid");
@@ -69,21 +72,23 @@ module.exports = class getNovalUtils {
  * @param {string} novalId - 小说的 ID
  * @returns {Promise} - 解析后的小说章节列表
  */
-  async getNovalChapterList(novalId) {
+  async getNovalChapterList(novalId, cookie) {
     return new Promise((resolve, reject) => {
       // 根据小说 ID 生成小说详情页的 URL
       const detailUrl = this.chapterNovalObj.chapterNovalUrl.replace("${novalId}", novalId);
       console.log("detailUrl=====>", detailUrl) 
       // 发送 GET 请求获取小说详情页的 HTML 内容
       fetch(detailUrl, {
-        "headers": {},
+        "headers": {
+          "cookie": cookie,
+        },
         "body": null,
         "method": "GET"
       }).then(response => response.text()).then(data => {
         // 使用 cheerio 加载 HTML 内容
         const $ = cheerio.load(data);
         // 遍历章节列表中的每个章节元素
-        $(".boxT .lfT li").each((index, elementCharpts) => {
+        $(".lfT li").each((index, elementCharpts) => {
           // 遍历每个章节元素中的链接元素
           $("div a", elementCharpts).each((index, element) => {
             // 将章节名称和链接添加到小说章节列表中
@@ -100,23 +105,70 @@ module.exports = class getNovalUtils {
   }
   
   
-  async getNovalContent(contentUrl) {
-    return new Promise((resolve, reject) => {
-      fetch("https://www.tadu.com/getPartContentByCodeTable/1003880/600", {
-        "headers": {
-          "cookie": "__jsluid_s=2f539e00172829242beafdd1cfeb199e; _ebc81c6d435065d480cb865bdbc4fec2=7d4c08238a84c8d37d19dfcd9103c78cd43c691d258176a9c353b177aa4a7da420c4774c38a1f1e70fd6188df466d7ad; _ee965b7158f5ac6ba1d18e3e6bdf7644=0aa9abe0440dd2ac14d79db07dc26a6a; font_size=; screen_width=; __guid=203173143.2580927311756749000.1731138199278.6511; Hm_lvt_3b387970cdb803bd81d7f67e34d57668=1734250742,1734872976,1735397418; HMACCOUNT=C61EE7EAB881F4ED; _0614608b11a9a44a25bfd07cf887e9a9=5ff39eddc43ec20e056e185f21a03ea4f56a759237b4f80176c5c48db3306ac6e5b80e93f99d030866f310a0b7c537a3; count=4; Hm_lpvt_3b387970cdb803bd81d7f67e34d57668=1735398886; _c26e8178126688deb863604bef4b0cda=2665fac0ab696a59508bb5d13ce65554; _ecdcd22cb11e7f874bde71fc7a0c51d4=b28ea4325f3449aacc63025ab3e4b684",
-        },
-        "body": null,
-        "method": "GET"
-      }).then(response => response.text()).then(data => {
-        let regx = /<p[^>]*>(.*?)<\/p>/g;
-        let contentStrings = [];
-        data.match(regx).forEach((item) => {
-          let tempItem = item.replace(regx, "$1")
-          contentStrings.push(tempItem)
-        })
-        console.log("contentStrings====>", contentStrings.join("\r\n"))
-      });
-    })
+  async getNovalContent(cookie, novalId, novalName) {
+    // 获取小说一共多少章
+    let chapterList = await this.getNovalChapterList(novalId, cookie)
+    console.log("chapterList.lenght====>", chapterList.length)
+
+    // 分批次获取小说的类容
+    let chapterListRes = []
+    if(chapterList.length <= 0)  return chapterListRes;
+    const totalRequests = chapterList.length; // 总请求数
+    // const totalRequests = 2; // 总请求数
+    const concurrentRequests = 1; // 每次并发请求数
+    for (let i = 0; i < totalRequests; i += concurrentRequests) {
+      // 创建一个数组来存储当前批次的请求
+      const requests = [];
+      // 发送当前批次的请求
+      let requestIndex = 0
+      for (let j = 0; j < concurrentRequests; j++) {
+        requestIndex = i + j;
+        if (requestIndex < totalRequests) {
+          console.log(`requestIndex111====>https://www.tadu.com/getPartContentByCodeTable/${novalId}/${requestIndex + 1}`)
+          requests.push(
+            new Promise((resolve, reject) => {
+              fetch(`https://www.tadu.com/getPartContentByCodeTable/${novalId}/${requestIndex + 1}`, {
+                "headers": {
+                  "cookie": cookie,
+                },
+                "body": null,
+                "method": "GET"
+              }).then(response => response.text()).then(data => {
+                try {
+                  let regx = /<p[^>]*>(.*?)<\/p>/g;
+                  let contentStrings = [];
+                  data.match(regx).forEach((item) => {
+                    let tempItem = item.replace(regx, "$1")
+                    contentStrings.push(tempItem)
+                  })
+                  // console.log("contentStrings====>", contentStrings.join("\r\n"))
+                  resolve([chapterList[requestIndex].name, contentStrings.join("\r\n")])
+                } catch (error) {
+                  console.log("error===>", error)
+                  reject([])
+                }
+                
+              });
+            })
+          )
+        }
+      }
+      // 等待当前批次的所有请求完成
+      let res = null
+      try {
+        res = await Promise.all(requests);
+        //发送进度事件
+        eventBus.emit('progress', {
+          progress: requestIndex + 1,
+          total: totalRequests,
+        });
+      } catch (error) {
+        res = []
+        console.error("error====>", error);
+      }
+      chapterListRes = [...chapterListRes, ...res]
+    }
+    // console.log("chapterListRes====>", chapterListRes)
+    return chapterListRes
   }
 }

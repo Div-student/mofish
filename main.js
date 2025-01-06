@@ -6,6 +6,7 @@ const pdf = require('pdf-parse');
 const  fs = require('fs');
 
 const getNovalUtils = require('./getNovalUtils.js')
+const eventBus = require('./eventCenter');
 
 const store = new Store();
 let win = null
@@ -25,6 +26,16 @@ const createWindow = async() => {
       nodeIntegration: true // 确保 nodeIntegration 为 true
     }
   })
+
+  // 在 macOS 上设置更高的置顶级别
+  if (process.platform === 'darwin') {
+    win.setAlwaysOnTop(true, 'floating');
+    // 设置窗口级别高于普通窗口
+    win.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true
+    });
+  }
+  
   win.loadFile('index.html')
 
   // 记录软件运行的平台系统类型
@@ -43,13 +54,6 @@ const createWindow = async() => {
   }
   
   // win.webContents.openDevTools();
-
-  
-  
-
-  // let novalList = await getNovalUtilsMap.searchNoval("东莞往事")
-  // console.log("novalList====>", novalList)
-  // getNovalUtilsMap.getNovalContent("https://www.tadu.com/getPartContentByCodeTable/1003880/1")
 }
 
 // 创建设置弹窗
@@ -143,8 +147,197 @@ function createOnlineNovelWindow(novalName) {
     chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
   })
 
-  onlineNovelWindow.webContents.openDevTools();
+  // onlineNovelWindow.webContents.openDevTools();
 }
+
+// 小说章节列表弹窗
+let novelChapterWindow = null 
+function creatNovelChapterWindow(charpterUrl) {
+  novelChapterWindow = new BrowserWindow({
+    width: 700,
+    height: 400,
+    parent: onlineNovelWindow,
+    autoHideMenuBar:true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nativeWindowOpen: true,
+      // contextIsolation: true,
+      nodeIntegration: true, // 确保 nodeIntegration 为 false
+    }
+  });
+  novelChapterWindow.loadURL('https://www.tadu.com' + charpterUrl);  
+  novelChapterWindow.webContents.setWindowOpenHandler((details) => {
+    console.log('导航到：details', details);
+    novelChapterWindow.loadURL(details.url); // 在当前窗口加载新链接
+    // 监听网页加载完成事件
+    novelChapterWindow.webContents.on('did-finish-load', () => {
+      // 在网页上下文中执行自定义脚本
+      const customScript = `
+      // 创建一个 div 元素
+      let widget = document.createElement('div');
+      widget.id = 'collectWidget';
+
+      // 创建 CSS 样式
+      const style = document.createElement('style');
+      style.textContent = \`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .loading::before {
+          content: '';
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          border: 3px solid #ffffff;
+          border-top: 3px solid transparent;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        
+        .loading {
+          position: relative;
+          color: transparent !important;
+        }
+      \`;
+      document.head.appendChild(style);
+
+      // 设置样式
+      widget.style.position = 'fixed';
+      widget.style.bottom = '50vh';
+      widget.style.right = '20px';
+      widget.style.width = '60px';
+      widget.style.height = '60px';
+      widget.style.backgroundColor = '#4caf50';
+      widget.style.borderRadius = '50%';
+      widget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+      widget.style.cursor = 'pointer';
+      widget.style.display = 'flex';
+      widget.style.alignItems = 'center';
+      widget.style.justifyContent = 'center';
+      widget.style.color = '#fff';
+      widget.style.fontSize = '12px';
+      widget.style.zIndex = '1000';
+      widget.style.transition = 'background-color 0.3s'; // 添加过渡效果
+
+      // 添加内容
+      widget.innerHTML = '点击采集';
+
+      // 添加点击事件
+      widget.onclick = function() {
+        // 添加 loading 类
+        widget.classList.add('loading');
+        // 改变背景色
+        widget.style.backgroundColor = '#45a049';
+
+        let widgetSpan ="<span id='processDom' style='color:white'>采集中</span>" 
+        widget.innerHTML = widgetSpan;
+
+        // 发送请求
+        window.electronAPI.sendMsgToWindow({
+          windowName: 'onlineNovelWindow',
+          action: 'downloadNovel',
+          data: {
+            cookie: document.cookie
+          }
+        });
+      };
+
+      // 添加鼠标悬停效果
+      widget.addEventListener('mouseenter', () => {
+        if (!widget.classList.contains('loading')) {
+          widget.style.backgroundColor = '#45a049';
+        }
+      });
+
+      widget.addEventListener('mouseleave', () => {
+        if (!widget.classList.contains('loading')) {
+          widget.style.backgroundColor = '#4caf50';
+        }
+      });
+
+      // 监听采集进度事件
+      window.electronAPI.onMsgFromWindow((msg)=>{
+        console.log('msg1212===>',msg)
+        if(msg.action === 'process'){
+          let processDom = document.getElementById('processDom')
+          if(processDom){
+            processDom.innerHTML = msg.progress + '/' + msg.total
+          }
+        }
+      })
+
+      // 将小工具添加到 body 中
+      document.body.appendChild(widget);
+
+
+      // 创建一个返回 div 元素
+      let widgetBack = document.createElement('div');
+      widgetBack.id = 'widgetBack'; 
+      // 设置样式
+      widgetBack.style.position = 'fixed';
+      widgetBack.style.bottom = '50vh';
+      widgetBack.style.left = '20px';
+      widgetBack.style.width = '60px';
+      widgetBack.style.height = '60px';
+      widgetBack.style.backgroundColor = '#4caf50';
+      widgetBack.style.borderRadius = '50%';
+      widgetBack.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+      widgetBack.style.cursor = 'pointer';
+      widgetBack.style.display = 'flex';
+      widgetBack.style.alignItems = 'center';
+      widgetBack.style.justifyContent = 'center';
+      widgetBack.style.color = '#fff';
+      widgetBack.style.fontSize = '12px';
+      widgetBack.style.zIndex = '1000';
+      widgetBack.style.transition = 'background-color 0.3s'; // 添加过渡效果
+
+      // 添加内容
+      widgetBack.innerHTML = '返回';
+
+      // 添加点击事件
+      widgetBack.onclick = function() {
+        // 发送请求
+        window.electronAPI.sendMsgToWindow({
+          windowName: 'onlineNovelWindow',
+          action: 'returnBack'
+        });
+      };
+
+      // 添加鼠标悬停效果
+      widgetBack.addEventListener('mouseenter', () => {
+        if (!widgetBack.classList.contains('loading')) {
+          widgetBack.style.backgroundColor = '#45a049';
+        }
+      });
+
+      widgetBack.addEventListener('mouseleave', () => {
+        if (!widgetBack.classList.contains('loading')) {
+          widgetBack.style.backgroundColor = '#4caf50';
+        }
+      });
+
+      // 将返回工具添加到 body 中
+      document.body.appendChild(widgetBack);
+      `;
+      
+      novelChapterWindow.webContents.executeJavaScript(customScript)
+      .then(result => {
+          console.log('脚本执行结果:', result);
+      })
+      .catch(error => {
+          console.error('脚本执行错误:', error);
+      });
+    });
+    return { action: 'deny' }
+  })
+  // novelChapterWindow.webContents.openDevTools();
+}
+
+
 
 // 监听小说切换窗口事件
 ipcMain.on('novalChangeEvent', (event, message) => {
@@ -227,18 +420,61 @@ ipcMain.on('message-from-child', (event, message) => {
 });
 
 // 监听所有从子窗口发送的消息
+let mofish_bookId = null
+let mofish_bookName = null
+let mofish_chapterUrl = null
 ipcMain.on('message-from-win', async (event, message) => {
   console.log('Message from win:', message);
   if(message.windowName == "onlineNovelWindow"){
-    // console.log("message.data.novelName====>", message.data.novelName)
    if(message.action == "searchNovel"){
     let novalList = await getNovalUtilsMap.searchNoval(message.data.novelName)
     message.data.novelList = novalList
    }else if(message.action == "getChapterList"){
-    let chapterList = await getNovalUtilsMap.getNovalChapterList(message.data.bookId)
-    // console.log("chapterList====>", chapterList)
-    getNovalUtilsMap.getNovalContent("https://www.tadu.com/getPartContentByCodeTable/1003880/600")
-    message.data.chapterList = chapterList
+    creatNovelChapterWindow(message.data.bookUrl)
+    mofish_bookId = message.data.bookId
+    mofish_bookName = message.data.title
+    mofish_chapterUrl = message.data.bookUrl
+   }else if(message.action == "downloadNovel"){
+    let subscibeEvent = eventBus.on('progress', (progress) => {
+      console.log('progress===>', progress);
+      progress.action = 'process'
+      novelChapterWindow.webContents.send('message-to-win', progress);
+    });
+    console.log("message.data.cookie====>", message.data.cookie)
+    let novalContentRes = await getNovalUtilsMap.getNovalContent(message.data.cookie, mofish_bookId)
+    console.log("novalContentRes==>", novalContentRes)
+    // 将小说存入本地
+    let tempMap = {}
+    novalContentRes.forEach((element, index) => {
+      tempMap[index] = element
+    });
+    let storeData = store.get('mydata') || {}
+    storeData[mofish_bookName] = tempMap
+    store.set("mydata", storeData)
+
+    // 通知设置窗口下载成功，更新小说列表
+    let downLoadMsg = {
+      downloadMsg:"success"
+    }
+    newWindow.webContents.send('message-to-parent1', downLoadMsg);
+    // 关闭采集按钮的loading效果
+    let loadingScript = `
+      let collectWidget = document.getElementById('collectWidget');
+      collectWidget.classList.remove('loading');
+      collectWidget.style.backgroundColor = '#4caf50';
+
+      let processDom = document.getElementById('processDom')
+      if(processDom){
+        processDom.innerHTML = '点击采集'
+      }
+    `
+    novelChapterWindow.webContents.executeJavaScript(loadingScript)
+    subscibeEvent() // 取消订阅下载进度事件
+    message.data = { msg:"success", chapterLength:novalContentRes.length }
+   }else if(message.action == "returnBack"){
+    // 返回到上一级页面
+    novelChapterWindow.close()
+    creatNovelChapterWindow(mofish_chapterUrl)
    }
    
    onlineNovelWindow.webContents.send('message-to-win', message);
@@ -248,7 +484,6 @@ ipcMain.on('message-from-win', async (event, message) => {
 // 监听pdf文件转换请求
 ipcMain.on( 'prefix-convert-pdf', ( event, file_base_path ) => {
   let dataBuffer = fs.readFileSync(file_base_path);
- 
   pdf(dataBuffer).then(function(data) {
     newWindow.webContents.send('onMessagePdf', data.text);
   });

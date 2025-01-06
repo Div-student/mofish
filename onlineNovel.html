@@ -58,23 +58,20 @@
     }
     .novelTitle {
       font-weight: bold;
-      margin-bottom: 5px;
       max-width: 100px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       font-weight: bold;
-      margin-bottom: 5px;
       cursor: pointer;
     }
     .novelAuthor {
-      font-size: 12px;
+      font-size: 10px;
       color: #666;
       max-width: 100px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: bold;
     }
     .modal {
       display: none;
@@ -131,13 +128,6 @@
       justify-content: start;
       overflow: auto;
     }
-    .charpterItem{
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      background: linear-gradient(to right, #ff0000 0%, #ffff00 50%, #00ff00 100%);
-    }
   </style>
 </head>
 <body>
@@ -146,15 +136,6 @@
     <button id="searchButton">搜索</button>
   </div>
   <div id="searchResults"></div>
-  <div id="myModal" class="modal">
-    <div class="modal-content">
-      <div class="header">
-        <span class="download">下载⏬</span>
-        <span class="close">&times;</span>
-      </div>
-      <ul id="chapterList"></ul>
-    </div>
-  </div>
   <script>
     // 给搜索按钮添加点击事件
     document.getElementById("searchButton").addEventListener("click", async () => {
@@ -181,9 +162,13 @@
             bookCatagory:item.bookCatagory,
             bookStatus:item.bookStatus,
             bookId:item.bookId,
+            bookUrl:item.bookUrl,
+            bookSource:item.bookSource,
           }
         })
         displayResults(result)
+      }else if(msg.action === 'downloadNovel'){
+        alert(`导入小说：${msg.data.msg}, 共${msg.data.chapterLength}章节`)
       }
     })
 
@@ -201,59 +186,23 @@
             <div class="novelAuthor">${novel.bookCatagory}</div>
             <div class="novelAuthor">${novel.bookStatus}</div>
             <div class="novelAuthor">作者:${novel.author}</div>
+            <div class="novelAuthor">书源:${novel.bookSource}</div>
           </div>
         `;
         novelItem.addEventListener("click", () => {
-          showChapterList(novel.bookId);
+          showChapterList(novel);
         });
         searchResults.appendChild(novelItem);
       });
     }
 
-    // 显示章节列表
-    function showChapterList(bookId) {
-      const modal = document.getElementById("myModal");
-      const chapterList = document.getElementById("chapterList");
-      chapterList.innerHTML = "";
-      // 发送消息给主进程，请求章节列表
+    // 打开章节列表弹窗，并且在主线程记录bookId和bookName
+    function showChapterList(novel) {
       window.electronAPI.sendMsgToWindow({
         windowName: 'onlineNovelWindow',
         action:'getChapterList',
-        data:{
-          bookId:bookId
-        }
+        data: novel
       })
-      chapterList.innerHTML = `
-        <li class="charpterItem">第一章：3333</li>
-        <li class="charpterItem">第二章：3333</li>
-        <li class="charpterItem">第三章：3333</li>
-        <li class="charpterItem">第四章：3333</li>
-        <li class="charpterItem">第五章：3333</li>
-        <li class="charpterItem">第六章：3333</li>
-        <li class="charpterItem">第一章：3333</li>
-        <li class="charpterItem">第二章：3333</li>
-        <li class="charpterItem">第三章：3333</li>
-        <li class="charpterItem">第四章：3333</li>
-        <li class="charpterItem">第五章：3333</li>
-        <li class="charpterItem">第六章：3333</li>
-        <li class="charpterItem">第一章：3333</li>
-        <li class="charpterItem">第二章：3333</li>
-        <li class="charpterItem">第三章：3333</li>
-        <li class="charpterItem">第四章：3333</li>
-        <li class="charpterItem">第五章：3333</li>
-        <li class="charpterItem">第六章：3333</li>
-        `;
-
-      modal.style.display = "flex";
-      const closeBtn = document.getElementsByClassName("close")[0];
-      closeBtn.onclick = function() {
-        modal.style.display = "none";
-      }
-      window.onclick = function(event) {
-        if (event.target == modal) {
-          modal.style.display = "none";
-        }
-      }
     }
 
   </script>

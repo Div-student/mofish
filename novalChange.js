@@ -22,7 +22,7 @@ function getAllNovalName(){
   console.log("readProcessRes===>", readProcessRes)
   novalChapters.forEach((element, index) => {
     domSpan += `<span class="novalChapter" style="
-    background: linear-gradient(to right, #95ffac ${readProcessRes[index]?.readPercent || 0}%, white ${readProcessRes[index]?.readPercent || 0}%);" title="${element}" onclick="changeNovalChapter('${index}')">${element}</span>`
+    background: linear-gradient(to right, #95ffac ${readProcessRes?.[index]?.readPercent || 0}%, white ${readProcessRes?.[index]?.readPercent || 0}%);" title="${element}:${readProcessRes?.[index]?.readPercent || 0}%" onclick="changeNovalChapter('${index}')">${element}</span>`
   });
   novalDom.innerHTML = domSpan
 }

@@ -173,8 +173,8 @@ function setReadProcess(){
   if(!currentProcess.name) return;
   console.log("currentProcess===>", currentProcess)
   novalNameDom.innerText = currentProcess.name
-  let chapterTemp = storeData[currentProcess.name][currentProcess.chapter]
-  novalChartDom.innerText = chapterTemp.length>1 ? chapterTemp[0]:"序章"
+  let chapterTemp = storeData?.[currentProcess.name]?.[currentProcess.chapter]
+  novalChartDom.innerText = chapterTemp?.length>1 ? chapterTemp?.[0]:"序章"
   novalProcessDom.innerText = Number(currentProcess?.readPercent).toFixed(1) + "%"
 }
 
@@ -183,10 +183,49 @@ function getAllNovalName(){
   let novalNames = Object.keys(storeData)
   console.log("novalNames===>", novalNames)
   let innerString = ""
-  novalNames.forEach(item => {
-    innerString += `<div class="articleItem"><span>《</span><button title=${item} onclick="changeNoval('${item}')">${item}</button><span>》</span></div>`
+  if(novalNames.length <= 0){
+    innerString = `<div class="nodata">暂无小说，请先导入!</div>`
+  }
+  novalNames.forEach((item,index)=> {
+    innerString += `<div class="articleItem" onmouseenter="articleEnter('${index}')" onmouseleave="articleLeave('${index}')"><span>《</span><button title=${item} onclick="changeNoval('${item}')">${item}</button><span>》</span>
+    <span class="deleteNoval" id="deleteNoval${index}" onclick="deleteNoval('${item}')">✖️</span>
+    </div>`
   })
   readingContentDom.innerHTML = innerString
+}
+
+function deleteNoval(novalName){
+  // 从缓存中删除小说
+  delete storeData[novalName]
+  window.electronAPI.saveData('mydata', storeData);
+  getAllNovalName() // 更新可切换小说列表
+  currentProcess = window.electronAPI.loadData('currentProcess') || {};
+
+  // 从缓存中删除记录的小说章节阅读进度
+  let chapterReadProcess = window.electronAPI.loadData('chapterReadProcess') || {}
+  delete chapterReadProcess[novalName]
+  window.electronAPI.saveData('chapterReadProcess', chapterReadProcess);
+
+  // 从当前阅读进度中删除小说
+  console.log("currentProcess.name == novalName===>", currentProcess.name == novalName)
+  if(currentProcess.name == novalName){
+    window.electronAPI.saveData('currentProcess', {});
+    window.electronAPI.sendMessageToParent({type:"importData"});
+    // 重置阅读进度
+    novalNameDom.innerText = "无"
+    novalChartDom.innerText = "无"
+    novalProcessDom.innerText = 0 + "%"
+  }
+}
+
+function articleEnter(index){
+  let deleteNovalDom = document.getElementById('deleteNoval'+index)
+  deleteNovalDom.style = "display: block;"
+}
+
+function articleLeave(index){
+  let deleteNovalDom = document.getElementById('deleteNoval'+index)
+  deleteNovalDom.style = "display: none;"
 }
 
 function changeNoval(novalName){
@@ -194,7 +233,6 @@ function changeNoval(novalName){
 }
 // 在线小说导入事件
 function onlineNoval(){
-  console.log("onlineNoval===>121212121")
   window.electronAPI.onlineNovalImport()
 }
 
@@ -207,6 +245,8 @@ window.electronAPI.onMessageFromParent1((message) => {
     let chapterTemp = storeData[message.changeNoval][currentProcess.chapter]
     novalChartDom.innerText = chapterTemp.length>1 ? chapterTemp[0]:"序章"
     novalProcessDom.innerText = currentProcess.readPercent + "%"
+  }else if(message.downloadMsg == "success"){
+    getAllNovalName() // 更新可切换小说列表
   }
 });
 

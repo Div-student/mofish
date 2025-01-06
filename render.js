@@ -19,8 +19,20 @@ window.electronAPI.onMessageFromParent((message) => {
   if(message.type == "importData"){ // 导入小说
     data = window.electronAPI.loadData('mydata')
     currentProcess = window.electronAPI.loadData('currentProcess')
-    textarea.scrollTop = 0 // 重置阅读进度
-    textarea.innerHTML = data[currentProcess.name][currentProcess.chapter];
+    // textarea.scrollTop = 0 // 重置阅读进度
+    // textarea.innerHTML = data[currentProcess.name][currentProcess.chapter];
+
+
+    // 获取缓存中的小说
+    if(data?.[currentProcess.name]?.[currentProcess.chapter]){
+      textarea.scrollTop = 0 // 重置阅读进度
+      textarea.innerHTML = data[currentProcess.name]?.[currentProcess.chapter];
+    }else{
+      textarea.innerHTML = "\n \n \n \n欢迎使用「波波阅(mo)读(yu)神器」\n\n 您还没有导入/选择小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入/切换小说】\n\n如有问题可联系：微信:bobokeji521";
+    }
+
+
+
   }else if(message.wordColor){
     nextChart.setAttribute("style",`color:${message.wordColor}`)
     preChart.setAttribute("style",`color:${message.wordColor}`)
@@ -35,7 +47,8 @@ window.electronAPI.onMessageFromParent((message) => {
     }
     userProfileData = window.electronAPI.loadData('userProfile') // 重新获取一下缓存数据
   }else if(message.bgTransparent==0 || message.bgTransparent){
-    titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${message.bgTransparent/100});`)
+    // titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${message.bgTransparent/100});`)
+    titlebar.style.backgroundColor = `rgba(0, 0, 0, ${message.bgTransparent/100})`
   }else if(message.changeNoval){ // 切换小说
     currentProcess = window.electronAPI.loadData('currentProcess') //刷新缓存数据
     console.log("刷新缓存数据=====>", currentProcess)
@@ -216,11 +229,10 @@ function initPage(){
     // textarea.value = data[currentProcess.name]?.[currentProcess.chapter];
     textarea.innerHTML = data[currentProcess.name]?.[currentProcess.chapter];
   }else{
-    textarea.innerHTML = "\n \n \n \n欢迎使用「波波阅(mo)读(yu)神器」\n\n 您还没有导入小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入小说】\n\n如有问题可联系：微信:bobokeji521";
+    textarea.innerHTML = "\n \n \n \n欢迎使用「波波阅(mo)读(yu)神器」\n\n 您还没有导入/选择小说哦！请按照如下操作步骤开启您的阅(mo)读(yu)之旅 \n 请点击【鼠标右键】-》【设置】-》【导入/切换小说】\n\n如有问题可联系：微信:bobokeji521";
   }
 
   // 获取缓存中的背景透明度
-  console.log("userProfileData.bgTransparent=====>", userProfileData.bgTransparent)
   let bgTransparent = userProfileData.bgTransparent ?? 100;
   titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${bgTransparent/100});`)
   console.log("userProfileData.bgTransparent=====>", bgTransparent)
