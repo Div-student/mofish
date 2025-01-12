@@ -74,6 +74,9 @@ function createNewWindow() {
 
   newWindow.loadFile('settings.html');
 
+  // 完全移除菜单
+  newWindow.removeMenu();
+
   // 监听小说章节切换窗口事件
   ipcMain.on('message-from-child1', (event, message) => {
     console.log('Message from child1:', message);
@@ -117,6 +120,8 @@ function changeNovelWindow(novalName) {
     }
   });
   novelWindow.loadURL(`file://${__dirname}/novalChange.html?novalName=${novalName}`);
+  // 完全移除菜单
+  novelWindow.removeMenu();
   // novelWindow.webContents.openDevTools();
 }
 
@@ -126,7 +131,7 @@ let onlineNovelWindow = null
 let getNovalUtilsMap = null
 function createOnlineNovelWindow(novalName) {
   onlineNovelWindow = new BrowserWindow({
-    width: 700,
+    width: 720,
     height: 400,
     parent: newWindow,
     autoHideMenuBar:true,
@@ -138,16 +143,297 @@ function createOnlineNovelWindow(novalName) {
   });
   onlineNovelWindow.loadFile('onlineNovel.html');
 
+  // 完全移除菜单
+  onlineNovelWindow.removeMenu();
+
   getNovalUtilsMap = new getNovalUtils({
-    searchNovaUrl: "https://www.tadu.com/search",
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body:"query=${novalName}"
+    "塔读网":{
+      website: "https://www.tadu.com",
+      searchNovaUrl: "https://www.tadu.com/search",
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body:"query=${novalName}",
+      bookRules: {
+        bookeList: ".bookList .lastLine",
+        bookName: {
+          selecterName: ".bookNm",
+        },
+        bookUrl: {
+          selecterName: ".bot_list a:nth-child(2)",
+          attrName: "href",
+          withHost: false,
+        },
+        bookAuthor: {
+          selecterName: ".authorNm",
+        },
+        bookCatagory: {
+          selecterName: ".condition span:nth-child(2)",
+        },
+        bookStatus: {
+          selecterName: ".condition span:nth-child(4)",
+        },
+        bookDesc: {
+          selecterName: ".rtList.bookIntro",
+        },
+        bookImg: {
+          selecterName: ".bookImg img",
+          attrName: "data-src",
+          withHost: true,
+        },
+        bookId: {
+          selecterName: ".bookrackBtn",
+          attrName: "data-bookid",
+        },
+      }
+    },
+    "何以笙箫默":{
+      website: "http://www.yetianlian.net",
+      searchNovaUrl: "http://www.yetianlian.net/s.php?ie=utf-8&q=${novalName}",
+      method: "GET",
+      body: null,
+      "headers": {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "en-US,en;q=0.9",
+        "cache-control": "max-age=0",
+        "upgrade-insecure-requests": "1",
+        "cookie": "bcolor=; font=; size=; fontcolor=; width=; Hm_lvt_6268729d0d6d3bfed2c50924f64d8b11=1734232966,1736604927; HMACCOUNT=ADE4E27964CA3C75; Hm_lpvt_6268729d0d6d3bfed2c50924f64d8b11=1736609190"
+      },
+      bookRules: {
+        bookeList: ".type_show .bookbox",
+        bookName: {
+          selecterName: ".bookname",
+        },
+        bookUrl: {
+          selecterName: ".bookimg a",
+          attrName: "href",
+          withHost: false,
+        },
+        bookAuthor: {
+          selecterName: ".author",
+          removeString: "作者："
+        },
+        bookCatagory: {
+          selecterName: ".cat",
+        },
+        bookStatus: {
+          selecterName: ".update",
+        },
+        bookDesc: {
+          selecterName: ".update",
+        },
+        bookImg: {
+          selecterName: ".bookimg img",
+          attrName: "src",
+          withHost: false,
+        },
+        bookId: {
+          selecterName: ".bookimg a",
+          attrName: "href",
+        },
+      }
+    }
   }, {
-    chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
+    "塔读网":{
+      chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
+      chapterRules: {
+        chapterList: ".lfT li",
+        chapterName: {
+          selecterName: "div a",
+        },
+        chapterUrl: {
+          selecterName: "div a",
+          attrName: "href",
+          withHost: false,
+        }
+      }
+    },
+    "何以笙箫默":{
+      chapterNovalUrl: "http://www.yetianlian.net${novalId}",
+      chapterRules: {
+        chapterList: ".listmain dd",
+        chapterName: {
+          selecterName: "a",
+        },
+        chapterUrl: {
+          selecterName: "a",
+          attrName: "href",
+          withHost: false,
+        }
+      }
+    }
+  },{
+    "塔读网":{
+      baseChapterList: false,
+      regx: /<p[^>]*>(.*?)<\/p>/g,
+      subRegx: /<p[^>]*>(.*?)<\/p>/g,
+    },
+    "何以笙箫默":{
+      baseChapterList: true,
+      regx: /&nbsp;[^<]*/g,
+      subRegx: /[&nbsp;]*/g,
+    }
+  })
+  // onlineNovelWindow.webContents.openDevTools();
+}
+
+function execJavaScript(novelChapterWindow){
+  const customScript = `
+  // 创建一个 div 元素
+  let widget = document.createElement('div');
+  widget.id = 'collectWidget';
+
+  // 创建 CSS 样式
+  const style = document.createElement('style');
+  style.textContent = \`
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading::before {
+      content: '';
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid #ffffff;
+      border-top: 3px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading {
+      position: relative;
+      color: transparent !important;
+    }
+  \`;
+  document.head.appendChild(style);
+
+  // 设置样式
+  widget.style.position = 'fixed';
+  widget.style.bottom = '50vh';
+  widget.style.right = '20px';
+  widget.style.width = '60px';
+  widget.style.height = '60px';
+  widget.style.backgroundColor = '#4caf50';
+  widget.style.borderRadius = '50%';
+  widget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+  widget.style.cursor = 'pointer';
+  widget.style.display = 'flex';
+  widget.style.alignItems = 'center';
+  widget.style.justifyContent = 'center';
+  widget.style.color = '#fff';
+  widget.style.fontSize = '12px';
+  widget.style.zIndex = '1000';
+  widget.style.transition = 'background-color 0.3s'; // 添加过渡效果
+
+  // 添加内容
+  widget.innerHTML = '点击采集';
+
+  // 添加点击事件
+  widget.onclick = function() {
+    // 添加 loading 类
+    widget.classList.add('loading');
+    // 改变背景色
+    widget.style.backgroundColor = '#45a049';
+
+    let widgetSpan ="<span id='processDom' style='color:white'>采集中</span>" 
+    widget.innerHTML = widgetSpan;
+
+    // 发送请求
+    window.electronAPI.sendMsgToWindow({
+      windowName: 'onlineNovelWindow',
+      action: 'downloadNovel',
+      data: {
+        cookie: document.cookie
+      }
+    });
+  };
+
+  // 添加鼠标悬停效果
+  widget.addEventListener('mouseenter', () => {
+    if (!widget.classList.contains('loading')) {
+      widget.style.backgroundColor = '#45a049';
+    }
+  });
+
+  widget.addEventListener('mouseleave', () => {
+    if (!widget.classList.contains('loading')) {
+      widget.style.backgroundColor = '#4caf50';
+    }
+  });
+
+  // 监听采集进度事件
+  window.electronAPI.onMsgFromWindow((msg)=>{
+    console.log('msg1212===>',msg)
+    if(msg.action === 'process'){
+      let processDom = document.getElementById('processDom')
+      if(processDom){
+        processDom.innerHTML = msg.progress + '/' + msg.total
+      }
+    }
   })
 
-  // onlineNovelWindow.webContents.openDevTools();
+  // 将小工具添加到 body 中
+  document.body.appendChild(widget);
+
+
+  // 创建一个返回 div 元素
+  let widgetBack = document.createElement('div');
+  widgetBack.id = 'widgetBack'; 
+  // 设置样式
+  widgetBack.style.position = 'fixed';
+  widgetBack.style.bottom = '50vh';
+  widgetBack.style.left = '20px';
+  widgetBack.style.width = '60px';
+  widgetBack.style.height = '60px';
+  widgetBack.style.backgroundColor = '#4caf50';
+  widgetBack.style.borderRadius = '50%';
+  widgetBack.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+  widgetBack.style.cursor = 'pointer';
+  widgetBack.style.display = 'flex';
+  widgetBack.style.alignItems = 'center';
+  widgetBack.style.justifyContent = 'center';
+  widgetBack.style.color = '#fff';
+  widgetBack.style.fontSize = '12px';
+  widgetBack.style.zIndex = '1000';
+  widgetBack.style.transition = 'background-color 0.3s'; // 添加过渡效果
+
+  // 添加内容
+  widgetBack.innerHTML = '返回';
+
+  // 添加点击事件
+  widgetBack.onclick = function() {
+    // 发送请求
+    window.electronAPI.sendMsgToWindow({
+      windowName: 'onlineNovelWindow',
+      action: 'returnBack'
+    });
+  };
+
+  // 添加鼠标悬停效果
+  widgetBack.addEventListener('mouseenter', () => {
+    if (!widgetBack.classList.contains('loading')) {
+      widgetBack.style.backgroundColor = '#45a049';
+    }
+  });
+
+  widgetBack.addEventListener('mouseleave', () => {
+    if (!widgetBack.classList.contains('loading')) {
+      widgetBack.style.backgroundColor = '#4caf50';
+    }
+  });
+
+  // 将返回工具添加到 body 中
+  document.body.appendChild(widgetBack);
+  `;
+  
+  novelChapterWindow.webContents.executeJavaScript(customScript)
+  .then(result => {
+      console.log('脚本执行结果:', result);
+  })
+  .catch(error => {
+      console.error('脚本执行错误:', error);
+  });
 }
 
 // 小说章节列表弹窗
@@ -167,170 +453,23 @@ function creatNovelChapterWindow(charpterUrl) {
       nodeIntegration: true, // 确保 nodeIntegration 为 false
     }
   });
-  novelChapterWindow.loadURL('https://www.tadu.com' + charpterUrl);  
+  novelChapterWindow.loadURL(charpterUrl);  
+  // 完全移除菜单
+  novelChapterWindow.removeMenu();
+
+  novelChapterWindow.webContents.on('will-navigate', (event, url) => {
+    console.log('URL 发生变化:', url);
+    // 在这里处理 URL 变化后的逻辑
+    execJavaScript(novelChapterWindow)
+  });
+
   novelChapterWindow.webContents.setWindowOpenHandler((details) => {
     console.log('导航到：details', details);
     novelChapterWindow.loadURL(details.url); // 在当前窗口加载新链接
     // 监听网页加载完成事件
     novelChapterWindow.webContents.on('did-finish-load', () => {
       // 在网页上下文中执行自定义脚本
-      const customScript = `
-      // 创建一个 div 元素
-      let widget = document.createElement('div');
-      widget.id = 'collectWidget';
-
-      // 创建 CSS 样式
-      const style = document.createElement('style');
-      style.textContent = \`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        .loading::before {
-          content: '';
-          position: absolute;
-          width: 40px;
-          height: 40px;
-          border: 3px solid #ffffff;
-          border-top: 3px solid transparent;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-        
-        .loading {
-          position: relative;
-          color: transparent !important;
-        }
-      \`;
-      document.head.appendChild(style);
-
-      // 设置样式
-      widget.style.position = 'fixed';
-      widget.style.bottom = '50vh';
-      widget.style.right = '20px';
-      widget.style.width = '60px';
-      widget.style.height = '60px';
-      widget.style.backgroundColor = '#4caf50';
-      widget.style.borderRadius = '50%';
-      widget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-      widget.style.cursor = 'pointer';
-      widget.style.display = 'flex';
-      widget.style.alignItems = 'center';
-      widget.style.justifyContent = 'center';
-      widget.style.color = '#fff';
-      widget.style.fontSize = '12px';
-      widget.style.zIndex = '1000';
-      widget.style.transition = 'background-color 0.3s'; // 添加过渡效果
-
-      // 添加内容
-      widget.innerHTML = '点击采集';
-
-      // 添加点击事件
-      widget.onclick = function() {
-        // 添加 loading 类
-        widget.classList.add('loading');
-        // 改变背景色
-        widget.style.backgroundColor = '#45a049';
-
-        let widgetSpan ="<span id='processDom' style='color:white'>采集中</span>" 
-        widget.innerHTML = widgetSpan;
-
-        // 发送请求
-        window.electronAPI.sendMsgToWindow({
-          windowName: 'onlineNovelWindow',
-          action: 'downloadNovel',
-          data: {
-            cookie: document.cookie
-          }
-        });
-      };
-
-      // 添加鼠标悬停效果
-      widget.addEventListener('mouseenter', () => {
-        if (!widget.classList.contains('loading')) {
-          widget.style.backgroundColor = '#45a049';
-        }
-      });
-
-      widget.addEventListener('mouseleave', () => {
-        if (!widget.classList.contains('loading')) {
-          widget.style.backgroundColor = '#4caf50';
-        }
-      });
-
-      // 监听采集进度事件
-      window.electronAPI.onMsgFromWindow((msg)=>{
-        console.log('msg1212===>',msg)
-        if(msg.action === 'process'){
-          let processDom = document.getElementById('processDom')
-          if(processDom){
-            processDom.innerHTML = msg.progress + '/' + msg.total
-          }
-        }
-      })
-
-      // 将小工具添加到 body 中
-      document.body.appendChild(widget);
-
-
-      // 创建一个返回 div 元素
-      let widgetBack = document.createElement('div');
-      widgetBack.id = 'widgetBack'; 
-      // 设置样式
-      widgetBack.style.position = 'fixed';
-      widgetBack.style.bottom = '50vh';
-      widgetBack.style.left = '20px';
-      widgetBack.style.width = '60px';
-      widgetBack.style.height = '60px';
-      widgetBack.style.backgroundColor = '#4caf50';
-      widgetBack.style.borderRadius = '50%';
-      widgetBack.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-      widgetBack.style.cursor = 'pointer';
-      widgetBack.style.display = 'flex';
-      widgetBack.style.alignItems = 'center';
-      widgetBack.style.justifyContent = 'center';
-      widgetBack.style.color = '#fff';
-      widgetBack.style.fontSize = '12px';
-      widgetBack.style.zIndex = '1000';
-      widgetBack.style.transition = 'background-color 0.3s'; // 添加过渡效果
-
-      // 添加内容
-      widgetBack.innerHTML = '返回';
-
-      // 添加点击事件
-      widgetBack.onclick = function() {
-        // 发送请求
-        window.electronAPI.sendMsgToWindow({
-          windowName: 'onlineNovelWindow',
-          action: 'returnBack'
-        });
-      };
-
-      // 添加鼠标悬停效果
-      widgetBack.addEventListener('mouseenter', () => {
-        if (!widgetBack.classList.contains('loading')) {
-          widgetBack.style.backgroundColor = '#45a049';
-        }
-      });
-
-      widgetBack.addEventListener('mouseleave', () => {
-        if (!widgetBack.classList.contains('loading')) {
-          widgetBack.style.backgroundColor = '#4caf50';
-        }
-      });
-
-      // 将返回工具添加到 body 中
-      document.body.appendChild(widgetBack);
-      `;
-      
-      novelChapterWindow.webContents.executeJavaScript(customScript)
-      .then(result => {
-          console.log('脚本执行结果:', result);
-      })
-      .catch(error => {
-          console.error('脚本执行错误:', error);
-      });
+      execJavaScript(novelChapterWindow)
     });
     return { action: 'deny' }
   })
@@ -428,12 +567,14 @@ ipcMain.on('message-from-win', async (event, message) => {
   if(message.windowName == "onlineNovelWindow"){
    if(message.action == "searchNovel"){
     let novalList = await getNovalUtilsMap.searchNoval(message.data.novelName)
+    console.log("novalList==>", novalList)
     message.data.novelList = novalList
    }else if(message.action == "getChapterList"){
     creatNovelChapterWindow(message.data.bookUrl)
     mofish_bookId = message.data.bookId
     mofish_bookName = message.data.title
     mofish_chapterUrl = message.data.bookUrl
+    mofish_bookSource = message.data.bookSource
    }else if(message.action == "downloadNovel"){
     let subscibeEvent = eventBus.on('progress', (progress) => {
       console.log('progress===>', progress);
@@ -441,7 +582,7 @@ ipcMain.on('message-from-win', async (event, message) => {
       novelChapterWindow.webContents.send('message-to-win', progress);
     });
     console.log("message.data.cookie====>", message.data.cookie)
-    let novalContentRes = await getNovalUtilsMap.getNovalContent(message.data.cookie, mofish_bookId)
+    let novalContentRes = await getNovalUtilsMap.getNovalContent(message.data.cookie, mofish_bookId, mofish_bookSource)
     console.log("novalContentRes==>", novalContentRes)
     // 将小说存入本地
     let tempMap = {}
