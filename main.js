@@ -14,11 +14,13 @@ let tray = null
 const createWindow = async() => {
   let windowSizeRes = store.get("windowSize")
   win = new BrowserWindow({
-    width: windowSizeRes?.width || 460,
+    width: windowSizeRes?.width || 500,
     height: windowSizeRes?.height || 240,
     frame:false,
     alwaysOnTop: true, // 设置窗口始终位于顶层
     transparent: true, // 透明窗口
+    hasShadow: false,
+    paintWhenInitiallyHidden: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: false,
@@ -62,7 +64,7 @@ function createNewWindow() {
   newWindow = new BrowserWindow({
     width: 500,
     // width: 1000,
-    height: 380,
+    height: 360,
     autoHideMenuBar:true,
     parent: win,
     webPreferences: {
@@ -91,7 +93,7 @@ function createNewWindow() {
 let novelWindowtokenWindow = null 
 function createTokenWindow() {
   tokenWindow = new BrowserWindow({
-    width: 460,
+    width: 500,
     height: 240,
     parent: win,
     frame:false,
@@ -146,134 +148,17 @@ function createOnlineNovelWindow(novalName) {
   // 完全移除菜单
   onlineNovelWindow.removeMenu();
 
-  getNovalUtilsMap = new getNovalUtils({
-    "塔读网":{
-      website: "https://www.tadu.com",
-      searchNovaUrl: "https://www.tadu.com/search",
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body:"query=${novalName}",
-      bookRules: {
-        bookeList: ".bookList .lastLine",
-        bookName: {
-          selecterName: ".bookNm",
-        },
-        bookUrl: {
-          selecterName: ".bot_list a:nth-child(2)",
-          attrName: "href",
-          withHost: false,
-        },
-        bookAuthor: {
-          selecterName: ".authorNm",
-        },
-        bookCatagory: {
-          selecterName: ".condition span:nth-child(2)",
-        },
-        bookStatus: {
-          selecterName: ".condition span:nth-child(4)",
-        },
-        bookDesc: {
-          selecterName: ".rtList.bookIntro",
-        },
-        bookImg: {
-          selecterName: ".bookImg img",
-          attrName: "data-src",
-          withHost: true,
-        },
-        bookId: {
-          selecterName: ".bookrackBtn",
-          attrName: "data-bookid",
-        },
-      }
-    },
-    "何以笙箫默":{
-      website: "http://www.yetianlian.net",
-      searchNovaUrl: "http://www.yetianlian.net/s.php?ie=utf-8&q=${novalName}",
-      method: "GET",
-      body: null,
-      "headers": {
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "accept-language": "en-US,en;q=0.9",
-        "cache-control": "max-age=0",
-        "upgrade-insecure-requests": "1",
-        "cookie": "bcolor=; font=; size=; fontcolor=; width=; Hm_lvt_6268729d0d6d3bfed2c50924f64d8b11=1734232966,1736604927; HMACCOUNT=ADE4E27964CA3C75; Hm_lpvt_6268729d0d6d3bfed2c50924f64d8b11=1736609190"
-      },
-      bookRules: {
-        bookeList: ".type_show .bookbox",
-        bookName: {
-          selecterName: ".bookname",
-        },
-        bookUrl: {
-          selecterName: ".bookimg a",
-          attrName: "href",
-          withHost: false,
-        },
-        bookAuthor: {
-          selecterName: ".author",
-          removeString: "作者："
-        },
-        bookCatagory: {
-          selecterName: ".cat",
-        },
-        bookStatus: {
-          selecterName: ".update",
-        },
-        bookDesc: {
-          selecterName: ".update",
-        },
-        bookImg: {
-          selecterName: ".bookimg img",
-          attrName: "src",
-          withHost: false,
-        },
-        bookId: {
-          selecterName: ".bookimg a",
-          attrName: "href",
-        },
-      }
-    }
-  }, {
-    "塔读网":{
-      chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
-      chapterRules: {
-        chapterList: ".lfT li",
-        chapterName: {
-          selecterName: "div a",
-        },
-        chapterUrl: {
-          selecterName: "div a",
-          attrName: "href",
-          withHost: false,
-        }
-      }
-    },
-    "何以笙箫默":{
-      chapterNovalUrl: "http://www.yetianlian.net${novalId}",
-      chapterRules: {
-        chapterList: ".listmain dd",
-        chapterName: {
-          selecterName: "a",
-        },
-        chapterUrl: {
-          selecterName: "a",
-          attrName: "href",
-          withHost: false,
-        }
-      }
-    }
-  },{
-    "塔读网":{
-      baseChapterList: false,
-      regx: /<p[^>]*>(.*?)<\/p>/g,
-      subRegx: /<p[^>]*>(.*?)<\/p>/g,
-    },
-    "何以笙箫默":{
-      baseChapterList: true,
-      regx: /&nbsp;[^<]*/g,
-      subRegx: /[&nbsp;]*/g,
-    }
-  })
+
+  initOnlieSource()
   // onlineNovelWindow.webContents.openDevTools();
+}
+
+function initOnlieSource(){
+  let onlineSource = store.get('onlineSource') || {}
+  console.log('onlineSource.searchNovalObj===>111111',onlineSource.searchNovalObj)
+  if(!onlineSource.searchNovalObj || !onlineSource.chapterNovalObj || !onlineSource.contentNovalObj) return
+  getNovalUtilsMap = new getNovalUtils(onlineSource.searchNovalObj,onlineSource.chapterNovalObj,onlineSource.contentNovalObj)
+  console.log('22222222222===>',onlineSource.contentNovalObj)
 }
 
 function execJavaScript(novelChapterWindow){
@@ -566,8 +451,7 @@ ipcMain.on('message-from-win', async (event, message) => {
   console.log('Message from win:', message);
   if(message.windowName == "onlineNovelWindow"){
    if(message.action == "searchNovel"){
-    let novalList = await getNovalUtilsMap.searchNoval(message.data.novelName)
-    console.log("novalList==>", novalList)
+    let novalList = await getNovalUtilsMap.searchNoval(message.data.novelName, message.data.bookSource)
     message.data.novelList = novalList
    }else if(message.action == "getChapterList"){
     creatNovelChapterWindow(message.data.bookUrl)
@@ -583,7 +467,7 @@ ipcMain.on('message-from-win', async (event, message) => {
     });
     console.log("message.data.cookie====>", message.data.cookie)
     let novalContentRes = await getNovalUtilsMap.getNovalContent(message.data.cookie, mofish_bookId, mofish_bookSource)
-    console.log("novalContentRes==>", novalContentRes)
+    // console.log("novalContentRes==>", novalContentRes)
     // 将小说存入本地
     let tempMap = {}
     novalContentRes.forEach((element, index) => {
@@ -616,6 +500,9 @@ ipcMain.on('message-from-win', async (event, message) => {
     // 返回到上一级页面
     novelChapterWindow.close()
     creatNovelChapterWindow(mofish_chapterUrl)
+   }else if(message.action == "importantSource"){
+    console.log("主线程收到消息==>导入书源成功")
+    initOnlieSource()
    }
    
    onlineNovelWindow.webContents.send('message-to-win', message);

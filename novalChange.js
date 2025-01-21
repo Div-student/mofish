@@ -18,7 +18,7 @@ function getAllNovalName(){
   savaReadProcess() // 保存当前进度
   chapterReadProcess = window.electronAPI.loadData('chapterReadProcess')
   let domSpan = ''
-  let readProcessRes = chapterReadProcess[novalName]
+  let readProcessRes = chapterReadProcess?.[novalName]
   console.log("readProcessRes===>", readProcessRes)
   novalChapters.forEach((element, index) => {
     domSpan += `<span class="novalChapter" style="
@@ -31,6 +31,7 @@ getAllNovalName()
 
 function savaReadProcess(){
   // 切换之前先将当前进度保存到对应的小说章节
+  if(!currentProcess){ return } // 当没有当前阅读进度时，直接返回, 第一次安装软件时，currentProcess 为 undefined
   chapterReadProcess[currentProcess.name] = chapterReadProcess[currentProcess.name] || {} // 当小说不存在时，先创建一个空对象
   chapterReadProcess[currentProcess.name][currentProcess.chapter]= {
     readPercent: currentProcess.readPercent,
@@ -41,8 +42,8 @@ function savaReadProcess(){
 
 function changeNovalChapter(chapter){
   savaReadProcess()
-  // 判断要切换的章节是否缓存了阅读进度，如果有责把当前进度更新为要切换章节的进度，否则重置当前进度
-  let novalChapterReadProcess = chapterReadProcess[novalName]?.[chapter]
+  // 判断要切换的章节是否缓存了阅读进度，如果有则把当前进度更新为要切换章节的进度，否则重置当前进度
+  let novalChapterReadProcess = chapterReadProcess?.[novalName]?.[chapter]
   if(!novalChapterReadProcess){
     window.electronAPI.saveData('currentProcess', { name:novalName, chapter:chapter, readPercent:0, scrollTop:0 });
   }else{

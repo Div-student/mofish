@@ -1,210 +1,622 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>小说搜索</title>
-  <style>
-    body {
-      font-size: 12px;
-      margin: 0;
-      padding: 10px;
-      overflow: hidden;
-    }
-    #searchContainer {
-      width: 100%;
-      flex-wrap: wrap;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    #searchBox {
-      width: 80%;
-      height: 30px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 5px;
-    }
-    #searchButton {
-      height: 30px;
-      border: none;
-      border-radius: 5px;
-      background-color: #007BFF;
-      color: #fff;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-    #searchResults {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      margin-top: 20px;
-      grid-gap: 10px;
-      justify-content: start;
-      overflow: auto;
-      height: 80vh;
-    }
-    .novelItem {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      cursor: pointer;
-    }
-    .novelCover {
-      width: 50px;
-      height: 70px;
-      margin-right: 10px;
-    }
-    .novelInfo {
-      flex: 1;
-    }
-    .novelTitle {
-      font-weight: bold;
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .novelAuthor {
-      font-size: 10px;
-      color: #666;
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .modal {
-      display: none;
-      justify-content: center;
-      align-items: center;
-      position: fixed;
-      z-index: 1;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.4);
-    }
-    .modal-content {
-      position: relative;
-      background-color: #fefefe;
-      padding: 0 10px;
-      border: 1px solid #888;
-      width: 80%;
-      height: 50%;
-      overflow: auto;
-    }
-    .header{
-      position: fixed;
-      width: 80%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: white;
-      height: 25px;
-    }
-    .close {
-      color: #aaa;
-      font-size: 20px;
-      font-weight: bold;
-    }
-    .download{
-      color: #007BFF;
-      cursor: pointer;;
-    }
-    .close:hover,
-    .close:focus {
-      color: black;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    #chapterList {
-      display: grid;
-      padding: 0;
-      margin: 25px 0 0 0;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      grid-gap: 10px;
-      justify-content: start;
-      overflow: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>线上小说搜索</title>
+    <script src="./jqueryJs/lz-string.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            /* height: 100vh; */
+            margin: 0;
+            font-size: 12px;
+            margin: 0;
+            padding: 10px;
+            overflow: hidden;
+        }
+        .composite-input {
+            display: flex;
+            align-items: center;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background-color: #fff;
+            width: 600px;
+            position: relative;
+            font-size: 12px;
+        }
+        .dropdown-toggle {
+            padding: 10px;
+            border-right: 1px solid #dcdfe6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+        }
+        .importSource{
+          position:absolute;
+          top:100%;
+          left: 2px;
+          color: #666;
+          font-size: 12px;
+          cursor: pointer;
+          text-decoration: underline;
+        }
+        .dropdown-toggle::after {
+            content: '';
+            display: inline-block;
+            margin-left: 5px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #000;
+            transition: transform 0.3s;
+        }
+        .dropdown-toggle.active::after {
+            transform: rotate(180deg);
+        }
+        .input-field {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 10px;
+            font-size: 12px;
+            color: #909399;
+        }
+        .search-button {
+            background-color: #f5f7fa;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid #dcdfe6;
+        }
+        .search-button:hover {
+            background-color: #e6e8eb;
+        }
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid #dcdfe6;
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+        .dropdown label {
+            display: block;
+            padding: 5px;
+            cursor: pointer;
+        }
+        .dropdown label:hover {
+            background-color: #f0f0f0;
+        }
+        #searchResults {
+          width: 100%;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          margin-top: 20px;
+          grid-gap: 10px;
+          justify-content: start;
+          overflow: auto;
+          height: 80vh;
+        }
+        .novelItem {
+          display: flex;
+          align-items: center;
+          margin-bottom: 10px;
+          cursor: pointer;
+        }
+        .novelCover {
+          width: 50px;
+          height: 70px;
+          margin-right: 10px;
+        }
+        .novelInfo {
+          flex: 1;
+        }
+        .novelTitle {
+          font-weight: bold;
+          max-width: 100px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-weight: bold;
+          cursor: pointer;
+        }
+        .novelAuthor {
+          font-size: 10px;
+          color: #666;
+          max-width: 100px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .modal {
+          display: none;
+          justify-content: center;
+          align-items: center;
+          position: fixed;
+          z-index: 1;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+          position: relative;
+          background-color: #fefefe;
+          padding: 0 10px;
+          border: 1px solid #888;
+          width: 80%;
+          height: 50%;
+          overflow: auto;
+        }
+        .header{
+          position: fixed;
+          width: 80%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: white;
+          height: 25px;
+        }
+        .close {
+          color: #aaa;
+          font-size: 20px;
+          font-weight: bold;
+        }
+        .download{
+          color: #007BFF;
+          cursor: pointer;;
+        }
+        .close:hover,
+        .close:focus {
+          color: black;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        #chapterList {
+          display: grid;
+          padding: 0;
+          margin: 25px 0 0 0;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          grid-gap: 10px;
+          justify-content: start;
+          overflow: auto;
+        }
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          justify-content: center;
+          align-items: center;
+        }
+        .modal-content {
+          background-color: #fff;
+          padding: 20px;
+          border-radius: 4px;
+          width: 300px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .modal-content button {
+          padding: 5px 5px;
+          margin-right: 10px;
+          border: none;
+          border-radius: 2px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+        .confirm-button {
+          background-color: #007BFF;
+          color: #fff;
+        }
+        .cancel-button {
+          background-color: #ccc;
+        }
+        #sourceInput{
+          width: 98%;
+          height: 80%;
+        }
+    </style>
 </head>
 <body>
-  <div id="searchContainer">
-    <input type="text" id="searchBox" placeholder="请输入小说名称">
-    <button id="searchButton">搜索</button>
-  </div>
-  <div id="searchResults"></div>
-  <script>
-    // 给搜索按钮添加点击事件
-    document.getElementById("searchButton").addEventListener("click", async () => {
-      const query = document.getElementById("searchBox").value;
-      window.electronAPI.sendMsgToWindow({
-        windowName: 'onlineNovelWindow',
-        action:'searchNovel',
-        data:{
-          novelName:query
-        }
-      })
-    });
 
-    // 监听主进程发送的消息
-    window.electronAPI.onMsgFromWindow((msg)=>{
-      console.log("11111===>")
-      console.log('receiveMsgFromWindow',msg)
-      if(msg.action === 'searchNovel'){
-        let result = msg.data.novelList.map((item)=>{
-          return {
-            title:item.name,
-            author:item.bookAuthor,
-            cover:item.imgUrl,
-            bookCatagory:item.bookCatagory,
-            bookStatus:item.bookStatus,
-            bookId:item.bookId,
-            bookUrl:item.bookUrl,
-            bookSource:item.bookSource,
-          }
-        })
-        displayResults(result)
-      }else if(msg.action === 'downloadNovel'){
-        alert(`导入小说：${msg.data.msg}, 共${msg.data.chapterLength}章节`)
+<div class="composite-input">
+  <div class="dropdown-toggle" onclick="toggleDropdown()" id="dropdown-toggle">
+    请选择书源
+  </div>
+  <input id="searchBox" type="text" class="input-field" placeholder="请输入小说名称">
+  <button id="searchButton" class="search-button"> 🔍 </button>
+  <div class="dropdown" id="dropdown">
+    <label><input type="checkbox" id="select-all" onclick="selectAll(this)"> 全选</label>
+  </div>
+  <span class="importSource" onclick="openModal()">导入书源</span>
+</div>
+<div id="searchResults"></div>
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <!-- <input type="text" placeholder="输入书源"> -->
+    <textarea name="" id="sourceInput" placeholder="输入书源"></textarea>
+    <button class="confirm-button" onclick="confirmImport()">确认</button>
+    <button class="cancel-button" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<script>
+  let onlineSource = {};
+  function initPage(){
+    onlineSource = window.electronAPI.loadData('onlineSource') || {};
+    console.log('onlineSource===>:', onlineSource);
+    formateOptions(onlineSource)
+  }
+  function formateOptions(onlineSource){
+    let optionArray = Object.keys(onlineSource.contentNovalObj || {})
+    const dropdown = document.getElementById('dropdown');
+    console.log('dropdown===>:', dropdown);
+    optionArray.forEach((item)=>{
+      const labelItem = document.createElement('label');
+      labelItem.innerHTML = `<input type="checkbox" value="${item}" onclick="updateSelected()">${item}`;
+      dropdown.appendChild(labelItem)
+    })
+  }
+  initPage()
+  function openModal() {
+    document.getElementById('modal').style.display = 'flex';
+  }
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+  // 压缩 JSON 对象
+  function compressJson(jsonObject) {
+    const jsonString = JSON.stringify(jsonObject);
+    const compressedString = LZString.compressToBase64(jsonString);
+    return compressedString;
+  }
+  // 解压缩 JSON 字符串
+  function decompressJson(compressedString) {
+    let jsonString = ""
+    let jsonObject = ""
+    try{
+      jsonString = LZString.decompressFromBase64(compressedString);
+      jsonObject = JSON.parse(jsonString);
+      console.log('jsonObject===>:', jsonObject);
+    }catch(e){
+      alert("书源格式错误")
+      throw e
+    }
+    if(!jsonObject){
+      alert("书源格式错误")
+      throw e
+    }
+    return jsonObject;
+  }
+
+  function confirmImport() {
+
+    // 示例
+    // const originalJson = {
+    //   "searchNovalObj":{
+    //     "何以笙箫默":{
+    //       website: "http://www.yetianlian.net",
+    //       searchNovaUrl: "http://www.yetianlian.net/s.php?ie=utf-8&q=${novalName}",
+    //       method: "GET",
+    //       body: null,
+    //       "headers": {
+    //         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    //         "accept-language": "en-US,en;q=0.9",
+    //         "cache-control": "max-age=0",
+    //         "upgrade-insecure-requests": "1",
+    //         "cookie": "bcolor=; font=; size=; fontcolor=; width=; Hm_lvt_6268729d0d6d3bfed2c50924f64d8b11=1734232966,1736604927; HMACCOUNT=ADE4E27964CA3C75; Hm_lpvt_6268729d0d6d3bfed2c50924f64d8b11=1736609190"
+    //       },
+    //       bookRules: {
+    //         bookeList: ".type_show .bookbox",
+    //         bookName: {
+    //           selecterName: ".bookname",
+    //         },
+    //         bookUrl: {
+    //           selecterName: ".bookimg a",
+    //           attrName: "href",
+    //           withHost: false,
+    //         },
+    //         bookAuthor: {
+    //           selecterName: ".author",
+    //           removeString: "作者："
+    //         },
+    //         bookCatagory: {
+    //           selecterName: ".cat",
+    //         },
+    //         bookStatus: {
+    //           selecterName: ".update",
+    //         },
+    //         bookDesc: {
+    //           selecterName: ".update",
+    //         },
+    //         bookImg: {
+    //           selecterName: ".bookimg img",
+    //           attrName: "src",
+    //           withHost: false,
+    //         },
+    //         bookId: {
+    //           selecterName: ".bookimg a",
+    //           attrName: "href",
+    //         },
+    //       }
+    //     },
+    //     "塔读网":{
+    //       website: "https://www.tadu.com",
+    //       searchNovaUrl: "https://www.tadu.com/search",
+    //       method: "POST",
+    //       headers: { "content-type": "application/x-www-form-urlencoded" },
+    //       body:"query=${novalName}",
+    //       bookRules: {
+    //         bookeList: ".bookList .lastLine",
+    //         bookName: {
+    //           selecterName: ".bookNm",
+    //         },
+    //         bookUrl: {
+    //           selecterName: ".bot_list a:nth-child(2)",
+    //           attrName: "href",
+    //           withHost: false,
+    //         },
+    //         bookAuthor: {
+    //           selecterName: ".authorNm",
+    //         },
+    //         bookCatagory: {
+    //           selecterName: ".condition span:nth-child(2)",
+    //         },
+    //         bookStatus: {
+    //           selecterName: ".condition span:nth-child(4)",
+    //         },
+    //         bookDesc: {
+    //           selecterName: ".rtList.bookIntro",
+    //         },
+    //         bookImg: {
+    //           selecterName: ".bookImg img",
+    //           attrName: "data-src",
+    //           withHost: true,
+    //         },
+    //         bookId: {
+    //           selecterName: ".bookrackBtn",
+    //           attrName: "data-bookid",
+    //         },
+    //       }
+    //     }
+    //   },
+    //   "chapterNovalObj":{
+    //     "塔读网":{
+    //       chapterNovalUrl: "https://www.tadu.com/book/${novalId}/",
+    //       chapterRules: {
+    //         chapterList: ".lfT li",
+    //         chapterName: {
+    //           selecterName: "div a",
+    //         },
+    //         chapterUrl: {
+    //           selecterName: "div a",
+    //           attrName: "href",
+    //           withHost: false,
+    //         }
+    //       }
+    //     },
+    //     "何以笙箫默":{
+    //       chapterNovalUrl: "http://www.yetianlian.net${novalId}",
+    //       chapterRules: {
+    //         chapterList: ".listmain dd",
+    //         chapterName: {
+    //           selecterName: "a",
+    //         },
+    //         chapterUrl: {
+    //           selecterName: "a",
+    //           attrName: "href",
+    //           withHost: false,
+    //         }
+    //       }
+    //     }
+    //   },
+    //   "contentNovalObj":{
+    //    "塔读网":{
+    //       baseChapterList: false,
+    //       regx: '<p[^>]*>(.*?)<\/p>',
+    //       subRegx:'<p[^>]*>(.*?)<\/p>',
+    //     },
+    //     "何以笙箫默":{
+    //       baseChapterList: true,
+    //       regx: '&nbsp;[^<]*',
+    //       subRegx: '[&nbsp;]*',
+    //     }
+    //   }
+    // }
+    // const compressed = compressJson(originalJson);
+    // console.log('Compressed:', compressed);
+
+    const base64String = document.querySelector('.modal-content #sourceInput').value.trim();
+    const decompressed = decompressJson(base64String);
+    window.electronAPI.saveData('onlineSource', decompressed);
+    console.log('Decompressed:', decompressed);
+
+    onlineSource = window.electronAPI.loadData('onlineSource') || {}; // 从本地存储中获取在线网络小说规则数据
+    console.log('onlineSource:', onlineSource);
+    formateOptions(onlineSource)
+    window.electronAPI.sendMsgToWindow({ // 通知主进程导入书源成功
+      windowName: 'onlineNovelWindow',
+      action:'importantSource',
+    })
+    // 关闭模态框
+    closeModal();
+  }
+  function toggleDropdown() {
+    const dropdown = document.getElementById('dropdown');
+    const toggle = document.getElementById('dropdown-toggle');
+    const isOpen = dropdown.style.display === 'block';
+    dropdown.style.display = isOpen ? 'none' : 'block';
+    toggle.classList.toggle('active', !isOpen);
+  }
+
+  function selectAll(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.dropdown input[type="checkbox"]');
+    if(checkboxes.length == 1){
+      alert("请导入书源！");
+      selectAllCheckbox.checked = false;
+      return;
+    }
+    checkboxes.forEach(checkbox => {
+      if (checkbox !== selectAllCheckbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+      }
+    });
+    updateSelected('all');
+  }
+
+  function updateSelected(tag) {
+    const selectedOptions = Array.from(document.querySelectorAll('.dropdown input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value)
+        .filter(value => value !== 'on'); // Exclude the "Select All" checkbox
+    if(tag != "all"){ isSelectAll(selectedOptions.length) } // 更新 "Select All" checkbox state
+    const toggle = document.getElementById('dropdown-toggle');
+    if (selectedOptions.length > 1) {
+        let optionName = selectedOptions[0];
+        let optionCount = selectedOptions.length - 1;
+        toggle.firstChild.textContent = `${optionName} +${optionCount}`;
+    } else if (selectedOptions.length === 1) {
+        toggle.firstChild.textContent = selectedOptions[0];
+    } else {
+        toggle.firstChild.textContent = '请选择书源';
+    }
+  }
+
+  function isSelectAll(length) {
+    const selectAllCheckDom = document.getElementById('select-all');
+    const allCheckbox = Array.from(document.querySelectorAll('.dropdown input[type="checkbox"]'))
+      .map(checkbox => checkbox.value)
+      .filter(value => {
+      return value !== 'on'
+    });
+    const totalNum = allCheckbox.length;
+    if (length == totalNum) {
+      selectAllCheckDom.checked = true;
+    } else {
+      selectAllCheckDom.checked = false;
+    }
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('dropdown');
+    const toggle = document.getElementById('dropdown-toggle');
+    if (!dropdown.contains(event.target) && !toggle.contains(event.target)) {
+        dropdown.style.display = 'none';
+        toggle.classList.remove('active');
+    }
+  });
+
+  // 给搜索按钮添加点击事件
+  document.getElementById("searchButton").addEventListener("click", async () => {
+    // 获取下拉框的值
+    const selectedValues = Array.from(document.querySelectorAll('.dropdown input[type="checkbox"]:checked'))
+      .map(checkbox => checkbox.value)
+    if (selectedValues.length == 0) {
+      alert("请选择书源");
+      return;
+    }
+    // 获取搜索框的值
+    const query = document.getElementById("searchBox").value;
+    window.electronAPI.sendMsgToWindow({
+      windowName: 'onlineNovelWindow',
+      action:'searchNovel',
+      data:{
+        novelName: query,
+        bookSource: selectedValues
       }
     })
+  });
 
-    // 显示搜索结果
-    function displayResults(results) {
-      const searchResults = document.getElementById("searchResults");
-      searchResults.innerHTML = "";
-      results.forEach((novel) => {
-        const novelItem = document.createElement("div");
-        novelItem.classList.add("novelItem");
-        novelItem.innerHTML = `
-          <img class="novelCover" src="${novel.cover}" alt="${novel.title}">
-          <div class="novelInfo">
-            <div class="novelTitle" title="${novel.title}">${novel.title}</div>
-            <div class="novelAuthor">${novel.bookCatagory}</div>
-            <div class="novelAuthor">${novel.bookStatus}</div>
-            <div class="novelAuthor">作者:${novel.author}</div>
-            <div class="novelAuthor">书源:${novel.bookSource}</div>
-          </div>
-        `;
-        novelItem.addEventListener("click", () => {
-          showChapterList(novel);
-        });
-        searchResults.appendChild(novelItem);
-      });
-    }
-
-    // 打开章节列表弹窗，并且在主线程记录bookId和bookName
-    function showChapterList(novel) {
-      window.electronAPI.sendMsgToWindow({
-        windowName: 'onlineNovelWindow',
-        action:'getChapterList',
-        data: novel
+  // 监听主进程发送的消息
+  window.electronAPI.onMsgFromWindow((msg)=>{
+    console.log("11111===>")
+    console.log('receiveMsgFromWindow',msg)
+    if(msg.action === 'searchNovel'){
+      let result = msg.data.novelList.map((item)=>{
+        return {
+          title:item.name,
+          author:item.bookAuthor,
+          cover:item.imgUrl,
+          bookCatagory:item.bookCatagory,
+          bookStatus:item.bookStatus,
+          bookId:item.bookId,
+          bookUrl:item.bookUrl,
+          bookSource:item.bookSource,
+        }
       })
+      displayResults(result)
+    }else if(msg.action === 'downloadNovel'){
+      alert(`导入小说：${msg.data.msg}, 共${msg.data.chapterLength}章节`)
     }
+  })
 
-  </script>
+  // 显示搜索结果
+  function displayResults(results) {
+    const searchResults = document.getElementById("searchResults");
+    searchResults.innerHTML = "";
+    results.forEach((novel) => {
+      const novelItem = document.createElement("div");
+      novelItem.classList.add("novelItem");
+      novelItem.innerHTML = `
+        <img class="novelCover" src="${novel.cover}" alt="${novel.title}">
+        <div class="novelInfo">
+          <div class="novelTitle" title="${novel.title}">${novel.title}</div>
+          <div class="novelAuthor">${novel.bookCatagory}</div>
+          <div class="novelAuthor">${novel.bookStatus}</div>
+          <div class="novelAuthor">作者:${novel.author}</div>
+          <div class="novelAuthor">书源:${novel.bookSource}</div>
+        </div>
+      `;
+      novelItem.addEventListener("click", () => {
+        showChapterList(novel);
+      });
+      searchResults.appendChild(novelItem);
+    });
+  }
+
+  // 打开章节列表弹窗，并且在主线程记录bookId和bookName
+  function showChapterList(novel) {
+    window.electronAPI.sendMsgToWindow({
+      windowName: 'onlineNovelWindow',
+      action:'getChapterList',
+      data: novel
+    })
+  }
+
+</script>
+
 </body>
 </html>

@@ -63,12 +63,12 @@ module.exports = class getNovalUtils {
   contentNovalObj = {
     "塔读网":{
       baseChapterList:"false",
-      regx: /<\/?[^>]+>/g,
+      regx: "<\/?[^>]+>",
     },
     "何以笙箫默":{
       baseChapterList:"true",
-      regx: /&nbsp;[^<]*/g,
-      subRegx: /[&nbsp;]*/g,
+      regx: "/&nbsp;[^<]*/g",
+      subRegx: "[&nbsp;]*",
     }
   }
 
@@ -76,16 +76,17 @@ module.exports = class getNovalUtils {
 
   novalChapterList = []
   constructor(searchNovalObj, chapterNovalObj, contentNovalObj) {
-    this.searchNovalObj = searchNovalObj
-    this.chapterNovalObj = chapterNovalObj
-    this.contentNovalObj = contentNovalObj
+    this.searchNovalObj = searchNovalObj || {}
+    this.chapterNovalObj = chapterNovalObj || {}
+    this.contentNovalObj = contentNovalObj || {}
     this.sourceArr = Object.keys(searchNovalObj)
   }
-  async searchNoval(novalName) {
-    console.log("novalName=====>", novalName)
+  async searchNoval(novalName, sourceValue) {
     this.novalArr = [];
     let promiseArr = []
-    this.sourceArr.forEach(async (item) => {
+    let diffSourceArr = sourceValue.filter(x => this.sourceArr.includes(x))
+    console.log("diffSourceArr=====>", diffSourceArr)
+    diffSourceArr.forEach(async (item) => {
       let baseUrl = this.searchNovalObj[item].searchNovaUrl
       console.log("baseUrl=====>", baseUrl)
       let reqOptions = {
@@ -135,7 +136,6 @@ module.exports = class getNovalUtils {
               })
               $(bookAuthorSelector, elementList).each((index, element) => {
                 if(this.searchNovalObj[item].bookRules.bookAuthor.removeString) {
-                  console.log("11111", this.searchNovalObj[item].bookRules.bookAuthor.removeString)
                   novalObj.bookAuthor = $(element).text().replace(this.searchNovalObj[item].bookRules.bookAuthor.removeString, "")
                 } else {
                   novalObj.bookAuthor = $(element).text();
@@ -229,8 +229,8 @@ module.exports = class getNovalUtils {
     // 获取小说一共多少章
     let chapterList = await this.getNovalChapterList(novalId, cookie, bookSource)
     let baseChapterList = this.contentNovalObj[bookSource].baseChapterList
-    let regx = this.contentNovalObj[bookSource].regx
-    let subRegx = this.contentNovalObj[bookSource].subRegx
+    let regx = new RegExp(this.contentNovalObj[bookSource].regx, "g") 
+    let subRegx = new RegExp(this.contentNovalObj[bookSource].subRegx, "g")
     console.log("regx====>", regx)
     console.log("subRegx.lenght====>", subRegx)
     console.log("chapterList====>", chapterList)
