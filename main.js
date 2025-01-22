@@ -121,7 +121,8 @@ function changeNovelWindow(novalName) {
       nodeIntegration: true, // 确保 nodeIntegration 为 false
     }
   });
-  novelWindow.loadURL(`file://${__dirname}/novalChange.html?novalName=${novalName}`);
+  const encodedNovalName = encodeURIComponent(novalName); // 对小说名称进行编码
+  novelWindow.loadURL(`file://${__dirname}/novalChange.html?novalName=${encodedNovalName}`);
   // 完全移除菜单
   novelWindow.removeMenu();
   // novelWindow.webContents.openDevTools();
@@ -208,7 +209,7 @@ function execJavaScript(novelChapterWindow){
   widget.style.justifyContent = 'center';
   widget.style.color = '#fff';
   widget.style.fontSize = '12px';
-  widget.style.zIndex = '1000';
+  widget.style.zIndex = '100000000';
   widget.style.transition = 'background-color 0.3s'; // 添加过渡效果
 
   // 添加内容
@@ -280,7 +281,7 @@ function execJavaScript(novelChapterWindow){
   widgetBack.style.justifyContent = 'center';
   widgetBack.style.color = '#fff';
   widgetBack.style.fontSize = '12px';
-  widgetBack.style.zIndex = '1000';
+  widgetBack.style.zIndex = '100000000';
   widgetBack.style.transition = 'background-color 0.3s'; // 添加过渡效果
 
   // 添加内容
