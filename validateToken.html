@@ -8,6 +8,28 @@
       font-size: 12px;
       margin: 0;
     }
+    .close-button {
+      position: absolute;
+      top: 2px;
+      width: 12px;
+      height: 12px;
+      background-color: #ff5c5c;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 12px;
+      line-height: 12px;
+    }
+    .close-button.left {
+      left: 4px;
+    }
+    .close-button.right {
+      right: 4px;
+    }
     #identityID {
       width: 90%; /* 设置容器宽度 */
       white-space: nowrap; /* 不换行 */
@@ -32,20 +54,24 @@
   </style>
 </head>
 <body>
+  <button class="close-button left" onclick="closePage()">×</button>
+  <button class="close-button right" onclick="closePage()">×</button>
+  <div class="topWrap">
     <div class="identityWrap">
       <span>您没有输入激活码或激活码已过期！请联系微信：【bobokeji520】获取免费的激活码！</span>
     </div>
-  <div class="identityWrap">
-    <div><span>我的身份ID:</span> <span id="copyBtn">一键复制</span></div>
-    <div id="identityID"></div>
-  </div>
-  <div class="identityWrap">
-    <span>请输入你的激活码:</span>
-    <textarea id="identityContent" placeholder="联系开发者获取你的验证码？"></textarea>
-  </div>
-  <div class="identityWrap">
-    <div id="identityBtnWrap">
-      <button id="identityBtn">激活验证码</button>
+    <div class="identityWrap">
+      <div><span>我的身份ID:</span> <span id="copyBtn">一键复制</span></div>
+      <div id="identityID"></div>
+    </div>
+    <div class="identityWrap">
+      <span>请输入你的激活码:</span>
+      <textarea id="identityContent" placeholder="联系开发者获取你的验证码？"></textarea>
+    </div>
+    <div class="identityWrap">
+      <div id="identityBtnWrap">
+        <button id="identityBtn">激活验证码</button>
+      </div>
     </div>
   </div>
   <script src="./validateTokenRender.js"></script>

@@ -12,6 +12,13 @@ let novalChartDom = document.getElementById('novalChart')
 let novalProcessDom = document.getElementById('novalProcess')
 let readingContentDom = document.getElementById('readingContent')
 let mouseWrapDom = document.getElementById('mouseWrap')
+let novalSetDom = document.getElementById('novalSet')
+let fontSetDom = document.getElementById('fontSet')
+let fontsliderWrap = document.getElementById('fontsliderWrap')
+let onlineInputDom = document.getElementById('onlineInput')
+// 获取页面参数
+let params = decodeURI(window.location.search)
+let isOnlineMode = params.split('=')[1]
 
 function ResetReadProcess(){
   storeData[fileName] = articals
@@ -58,6 +65,11 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
   const filePaths = await window.electronAPI.selectFile();
   storeData = window.electronAPI.loadData('mydata') || {}
   console.log("filePaths===>", filePaths)
+  const typeObj = {
+    "pdf": "pdf",
+    "txt": "txt",
+    "epub": "epub"
+  }
   if (filePaths.length > 0) {
     const filePath = filePaths[0]; // 替换为你的文件路径
     try {
@@ -65,7 +77,16 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
       fileName = fileNamePath[0].split('.')[0]
       fileType = fileNamePath[0].split('.')[1]
       console.log("fileType===>", fileType)
+      if(!typeObj[fileType]){
+        alert("文件名有误，请修改后导入!")
+        return
+      }
       const data = await window.electronAPI.readFile(filePath, fileType);
+      console.log("data===>1111", data)
+      if(!data){
+        alert("导入失败!txt文件只支持utf-8编码,请联系mofish作者或者网上搜索转换方法。")
+        return
+      }
       articals = { ...data }
       console.log("storeData===>", storeData[fileName])
       // 设置当前小说章节
@@ -89,7 +110,9 @@ document.getElementById('readFileButton').addEventListener('click', async () => 
 // 加载jq组件
 $( function() {
   var handle = $( "#custom-handle" );
-  $( "#accordion" ).accordion({ collapsible: true, animate:false });
+  var fontHandle = $( "#font-handle" );
+  let activeIndex = isOnlineMode == "YES" ? 1 : 0
+  $( "#accordion" ).accordion({ collapsible: true, animate:false, active: activeIndex });
 
   $( "#slider" ).slider({
     value: userProfile?.bgTransparent ?? 100,
@@ -103,6 +126,22 @@ $( function() {
       window.electronAPI.saveData('userProfile', userProfile);
       window.electronAPI.sendMessageToParent({
         bgTransparent: ui.value
+      });
+    }
+  });
+
+  $( "#fontslider" ).slider({
+    value: userProfile?.fontPercent ?? 100,
+    create: function() {
+      let slideValue = userProfile?.fontPercent ?? 100
+      fontHandle.text( slideValue );
+    },
+    slide: function( event, ui ) {
+      fontHandle.text( ui.value );
+      userProfile.fontPercent = ui.value
+      window.electronAPI.saveData('userProfile', userProfile);
+      window.electronAPI.sendMessageToParent({
+        fontPercent: ui.value
       });
     }
   });
@@ -145,12 +184,23 @@ $('input[name="radio-1"]').on('change', () => {
  // 获取状态栏图标设置下拉框元素
  const selectElement = document.getElementById('speed');
  selectElement.addEventListener('change', function() {
-    const selectedValue = this.value; // 获取选中的值
-    userProfile.statusBarIcon = selectedValue
-    window.electronAPI.saveData('userProfile', userProfile);
-    window.electronAPI.sendMessageToParent({
-      statusBarIcon: selectedValue
-    });
+  const selectedValue = this.value; // 获取选中的值
+  userProfile.statusBarIcon = selectedValue
+  window.electronAPI.saveData('userProfile', userProfile);
+  window.electronAPI.sendMessageToParent({
+    statusBarIcon: selectedValue
+  });
+ });
+
+ // 获取是否开启隐藏模式的下拉框元素
+ const selectElement1 = document.getElementById('speeds');
+ selectElement1.addEventListener('change', function() {
+  const selectedValue1 = this.value; // 获取选中的值
+  userProfile.hideMode = selectedValue1
+  window.electronAPI.saveData('userProfile', userProfile);
+  window.electronAPI.sendMessageToParent({
+    hideMode: selectedValue1
+  });
  });
 
 // 监听字体设置输入框变化
@@ -232,8 +282,66 @@ function changeNoval(novalName){
   window.electronAPI.novalChangeEvent({"openWindow":novalName})
 }
 // 在线小说导入事件
-function onlineNoval(){
-  window.electronAPI.onlineNovalImport()
+function onlineNoval(flag){
+  let objMap = {
+    "weRead":"https://weread.qq.com/",
+    "fenbi":"https://www.fenbi.com/spa/tiku/guide/home/xingce/xingce?labelId=1"
+  }
+  window.electronAPI.onlineNovalImport(objMap[flag])
+}
+function getInputValue(flag="") {
+  let inputField = document.getElementById('inputField'+flag);
+  let inputValue = inputField.value;
+  let res = isValidURL(inputValue)
+  if(!res){
+    alert("请输入正确的网址!")
+    return
+  }
+  // 检查是否以 http:// 或 https:// 开头, 如果没有协议，默认添加 https://
+  if (!/^https?:\/\//i.test(inputValue)) {
+    inputValue = 'https://' + inputValue;
+  }
+  window.electronAPI.onlineNovalImport(inputValue)
+}
+// 判断是否为网址
+function isValidURL(url) {
+  const pattern = new RegExp('^(https?:\\/\\/)?' + // 协议
+      '((([a-zA-Z\\d]([a-zA-Z\\d-]*[a-zA-Z\\d])*)\\.)+[a-zA-Z]{2,}|' + // 域名
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // 或者 IP 地址
+      '(\\:\\d+)?(\\/[-a-zA-Z\\d%_.~+]*)*' + // 端口和路径
+      '(\\?[;&a-zA-Z\\d%_.~+=-]*)?' + // 查询字符串
+      '(\\#[-a-zA-Z\\d_]*)?$', 'i'); // 片段标识符
+  return pattern.test(url);
+}
+
+var isExpand = false;
+function openOnline(){
+  const element = document.getElementById('animatedElement');
+  isExpand = !isExpand;
+  const inputContainer = document.getElementById('inputContainer');
+  inputContainer.classList.toggle('active');
+  if (isExpand) {
+    element.classList.remove('hidden');
+    element.classList.add('visible');
+  }else{
+    element.classList.remove('visible');
+    element.classList.add('hidden');
+  }
+}
+
+var isExpands = true;
+function openOnline1(){
+  const element = document.getElementById('animatedElement1');
+  isExpands = !isExpands;
+  const inputContainer1 = document.getElementById('inputContainer1');
+  inputContainer1.classList.toggle('active');
+  if (isExpands) {
+    element.classList.remove('hidden');
+    element.classList.add('visible');
+  }else{
+    element.classList.remove('visible');
+    element.classList.add('hidden');
+  }
 }
 
 // 监听小说章节切换事件
@@ -250,8 +358,22 @@ window.electronAPI.onMessageFromParent1((message) => {
   }
 });
 
+// 获取是否是线上阅读模式并且展示不同的功能配置项
+function getIsOnlineMode(){
+  if(isOnlineMode == "YES"){
+    novalSetDom.style = "display: none;"
+    fontSetDom.style = "display: none;"
+  }else{
+    fontsliderWrap.style = "display: none;"
+    onlineInputDom.style = "display: none;"
+  }
+}
+
 // 初始化页面配置
 function initPage(){
+  // 获取是否是线上阅读模式
+  getIsOnlineMode()
+
   // 获取缓存中的文字颜色
   let wordColor = userProfile?.wordColor || "#ffffff";
   document.getElementById('colorPicker').setAttribute("style",`color:${wordColor}`)
@@ -280,6 +402,8 @@ function initPage(){
   // 获取缓存中icon图标显示状态
   selectElement.value = userProfile?.statusBarIcon || "否"
 
+  // 获取缓存中隐藏模式
+  selectElement1.value = userProfile?.hideMode || "否"
 
   // 非windows系统暂时不支持滚动速度设置
   if(platformType != "win32"){

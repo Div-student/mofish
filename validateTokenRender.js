@@ -16,6 +16,13 @@ copyBtnDom.addEventListener("click", ()=>{
   });
 })
 
+function closePage(chapter){
+  window.electronAPI.sendMsgToWindow({ // 通知主进程关闭窗口
+    windowName: 'novelWindowtokenWindow',
+    action:'closePage',
+  })
+}
+
 const getMachinIdFn = async() => {
   MachinIDres = await window.electronAPI.getMachinID();
   identityIDDom.innerText = MachinIDres

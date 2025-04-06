@@ -1,10 +1,10 @@
 
 // 获取页面dom元素
-let textarea = document.getElementById('fileContent')
-let nextChart = document.getElementById('nextChart') 
-let preChart = document.getElementById('preChart') 
+let textarea = document.getElementById('fileContent');
+let nextChart = document.getElementById('nextChart');
+let preChart = document.getElementById('preChart'); 
 let titlebar = document.getElementById('contentWrap'); // 实现拖拽逻辑
-
+let htmlDom = document.getElementsByTagName('html')[0];
 // 页面数据加载
 let data = window.electronAPI.loadData('mydata') || {};
 let currentProcess = window.electronAPI.loadData('currentProcess') || {};
@@ -47,8 +47,11 @@ window.electronAPI.onMessageFromParent((message) => {
     }
     userProfileData = window.electronAPI.loadData('userProfile') // 重新获取一下缓存数据
   }else if(message.bgTransparent==0 || message.bgTransparent){
-    // titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${message.bgTransparent/100});`)
-    titlebar.style.backgroundColor = `rgba(0, 0, 0, ${message.bgTransparent/100})`
+    htmlDom.setAttribute("style",`opacity: ${message.bgTransparent/100};`)
+  }else if(message.hideMode){
+    // 获取缓存中的隐藏模式
+    let hideModes = userProfileData.hideMode==="是"?0:1;
+    titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${hideModes});`)
   }else if(message.changeNoval){ // 切换小说
     currentProcess = window.electronAPI.loadData('currentProcess') //刷新缓存数据
     console.log("刷新缓存数据=====>", currentProcess)
@@ -179,19 +182,6 @@ nextChart.addEventListener("click", ()=>{
         // 判断要切换的章节是否缓存了阅读进度，如果有责把当前进度更新为要切换章节的进度，否则重置当前进度
         let chapter = Number(currentProcess.chapter) + 1
         changeNovalChapter(chapter)
-        // let novalChapterReadProcess = chapterReadProcess[currentProcess.name]?.[chapter]
-        // textarea.innerHTML = data[currentProcess.name][chapter];
-        // if(!novalChapterReadProcess){
-        //   textarea.scrollTop = 0
-        //   currentProcess.scrollTop = 0
-        //   currentProcess.readPercent = 0
-        // }else{
-        //   textarea.scrollTop = novalChapterReadProcess.scrollTop
-        //   currentProcess.scrollTop = novalChapterReadProcess.scrollTop
-        //   currentProcess.readPercent = novalChapterReadProcess.readPercent
-        // }
-        // currentProcess.chapter = chapter
-        // window.electronAPI.saveData('currentProcess', currentProcess);
       }else{
         alert("当前章节已是最后章节！")
       }
@@ -234,8 +224,14 @@ function initPage(){
 
   // 获取缓存中的背景透明度
   let bgTransparent = userProfileData.bgTransparent ?? 100;
-  titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${bgTransparent/100});`)
+  htmlDom.setAttribute("style",`opacity: ${bgTransparent/100};`)
   console.log("userProfileData.bgTransparent=====>", bgTransparent)
+
+  // 获取缓存中的隐藏模式
+  let hideModes = userProfileData.hideMode==="是"?0:1;
+  titlebar.setAttribute("style",`background-color: rgba(0, 0, 0, ${hideModes});`)
+
+
   // 获取缓存中的文字颜色
   let wordColor = userProfileData.wordColor || "#fff"
   nextChart.setAttribute("style",`color:${wordColor}`)
@@ -260,6 +256,7 @@ window.addEventListener('contextmenu', (event) => {
   event.preventDefault(); // 阻止默认右键菜单
   window.electronAPI.showContextMenu(); // 显示自定义菜单
 });
+
 // 监听右键菜单‘设置’选项点击事件
 window.electronAPI.clickSetting(()=>{
   window.electronAPI.openNewWindow();

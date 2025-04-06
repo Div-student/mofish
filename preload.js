@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer} = require('electron');
 const  fs = require('fs');
 const  path = require('path');
+const { Writable } = require('stream');
+const jschardet = require('jschardet');
 const Store = require('electron-store');
 const EPub = require("epub")
 const store = new Store();
@@ -11,31 +13,27 @@ function getChapterAsync(chapterId, epub){
       let articleArray = []
       // 获取每一章节的标题
       let chapterName = ''
-      const regex = /<h1>.*?<span.*?>(.*?)<\/span>.*?<\/h1>/s;
+      // const regex = /<h1>.*?[<span.*?>(.*?)<\/span>.*?]?<\/h1>/s;
+
+      const regex = /\<h1[^>]*\>(.*?)\<\/h1\>/gis // 匹配 h1 标签及其内容
       const match = text.match(regex);
-      if (match && match[1]) {
+      // console.log("text====>", text); 
+      if (match && match[0]) {
         // 提取 span 标签内的文字
-        chapterName = match[1].replace(/<b>|<\/b>/g, ''); // 去掉 <b> 标签
-        console.log("chapterName====>", chapterName);
+        chapterName = match[0].replace(/<[^>]+>/g, ''); // 去除所有 HTML 标签，提取纯文本内容
+        // console.log("chapterName====>", chapterName);
         articleArray.push(chapterName)
+
+        // 获取每一章节��正文内容
+        const removeH1 = text.replace(/\<h1[^>]*\>(.*?)\<\/h1\>/gis, '') // 去除所有 H1 标题标签，提取纯文本内容
+        const replaceP = removeH1.replace(/<\/p>/gi, '\r') // 将所有 </p> 标签替换为 \r。g 表示全局替换，i 表示不区分大小写。
+        const replaceH = replaceP.replace(/<\/h1>/gi, '\r') // 将所有 </h1> 标签替换为 \r
+        const removeHtml = replaceH.replace(/<[^>]+>/g, '') // 去除所有 HTML 标签。<[^>]+> 匹配任意 HTML 标签。
+        articleArray.push(removeHtml)
+        // console.log("removeHtml====>", removeHtml);
       } else {
         console.log('未找到匹配的内容');
       }
-  
-      // 获取每一章节��正文内容
-      // 1. 删除 aside 和 sup 标签
-      const cleanedString = text.replace(/<aside[^>]*>.*?<\/aside>/g, '').replace(/<sup[^>]*>.*?<\/sup>/g, '');
-      // console.log("cleanedString===>", cleanedString)
-      // 2. 提取 p 标签下的 span 标签内容
-      const spanMatches = cleanedString.match(/<p><span[^>]*>(.*?)<\/span><\/p>/gs);
-      // console.log("spanMatches===>", spanMatches)
-      // 3. 提取文本内容
-      const extractedTexts = spanMatches ? spanMatches.map(match => {
-        const textMatch = match.match(/<span[^>]*>(.*?)<\/span>/gs);
-        return textMatch ? textMatch[0].replace(/<[^>]+>/g, '').trim() : '';
-      }) : [];
-      console.log("chapterContent====>", extractedTexts.join(""));
-      articleArray.push('\r' + extractedTexts.join("\r"))
       resolve(articleArray)
     });
   })
@@ -53,15 +51,17 @@ function getEpubFile(filePath){
       })
       let results = await Promise.all(aysncArray)
       let reduceIndex = 0
+      // console.log('results===>', results)
       results.forEach((itm, indx) => {
-        if(itm[0] != ""){
-          console.log('indx', indx)
-          articals[indx-1] = itm
+        // console.log('itm===>', itm)
+        if(itm.length >=2 && itm[0] != ""){
+          // console.log('indx', indx)
+          articals[indx-reduceIndex] = itm
         }else{
           reduceIndex += 1
         }
       })
-      console.log('articals1111===>', articals)
+      // console.log('articals1111===>', articals)
       resolve(articals)
     })
     epub.parse();
@@ -71,6 +71,7 @@ function getEpubFile(filePath){
 
 // 读取txt文件
 function getTxtFile(data){
+  if(!data) return null
   let articals = {}
   let reg = /((正文){0,1}(第)([零〇一二三四五六七八九十百千万a-zA-Z0-9]{1,7})[章节卷集部篇回](( {1,}).)((?!\t{1,4}).){0,30})\r?\n/g
   let res = data.replace(reg,"@@@$1@@+").split("@@@")
@@ -89,6 +90,113 @@ function getTxtFile(data){
   return articals
 }
 
+// 判断文件是否为utf-8编码
+async function isUtf8ByStream(filePath) {
+  return new Promise((resolve) => {
+    const detector = new jschardet.UniversalDetector();
+    let isUtf8 = false;
+    const readableStream = fs.createReadStream(filePath);
+    const writableStream = new Writable({
+      write: (chunk, encoding, callback) => {
+        detector.handle(chunk);
+        if (detector.result) {
+          isUtf8 = detector.result.encoding.toLowerCase() === 'utf-8';
+          readableStream.close(); // 提前结束流
+        }
+        callback();
+      }
+    });
+
+    readableStream.on('data', (chunk) => {
+      writableStream.write(chunk);
+    });
+
+    readableStream.on('close', () => {
+      detector.close();
+      resolve(isUtf8 || detector.result?.encoding?.toLowerCase() === 'utf-8');
+    });
+
+    readableStream.on('error', () => {
+      resolve(false);
+    });
+  });
+}
+
+async function detectEncoding(filePath) {
+  const buffer = fs.readFileSync(filePath);
+  const result = jschardet.detect(buffer);
+  return result.encoding.toLowerCase() === 'utf-8';
+}
+
+function detectFileEncodingAndRead(filePath) {
+  return new Promise((resolve, reject) => {
+    const stream = fs.createReadStream(filePath, {
+      highWaterMark: 1024 * 1024 // 1MB
+    });
+
+    let chunks = [];
+    let totalLength = 0;
+    const maxBytes = 1024 * 1024 * 50; // 50MB 用于编码检测
+    let isEncodingDetected = false;
+    let detectedEncoding = null;
+
+    stream.on('data', (chunk) => {
+      chunks.push(chunk);
+      totalLength += chunk.length;
+
+      // 只在未检测编码时进行检测
+      if (!isEncodingDetected && totalLength >= maxBytes) {
+        isEncodingDetected = true;
+        // 使用已收集的数据进行编码检测
+        const buffer = Buffer.concat(chunks);
+        const result = jschardet.detect(buffer);
+        detectedEncoding = result.encoding;
+
+        // 如果不是 UTF-8，立即停止读取
+        if (detectedEncoding !== 'UTF-8') {
+          stream.destroy();
+          resolve({
+            isUTF8: false,
+            encoding: detectedEncoding,
+            content: null
+          });
+        }
+      }
+    });
+
+    stream.on('end', () => {
+      // 如果还没检测过编码（文件小于 maxBytes），现在检测
+      if (!isEncodingDetected) {
+        const buffer = Buffer.concat(chunks);
+        const result = jschardet.detect(buffer);
+        detectedEncoding = result.encoding;
+      }
+
+      const isUTF8 = detectedEncoding === 'UTF-8' || detectedEncoding === 'ascii';
+
+      if (isUTF8) {
+        // 如果是 UTF-8，将所有数据块转换为字符串
+        const content = Buffer.concat(chunks).toString('utf8');
+        resolve({
+          isUTF8: true,
+          encoding: detectedEncoding,
+          content: content
+        });
+      } else {
+        resolve({
+          isUTF8: false,
+          encoding: detectedEncoding,
+          content: null
+        });
+      }
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath, fileType) => {
     return new Promise( async (resolve, reject) => {
@@ -97,14 +205,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
           resolve(res);
         })
       }else if(fileType == "txt"){
-        fs.readFile(filePath, 'utf-8', (err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            let result = getTxtFile(data)
-            resolve(result);
-          }
-        });
+        try {
+          let isUtf8Res = await detectFileEncodingAndRead(filePath)
+          let result = getTxtFile(isUtf8Res.content)
+          resolve(result)
+        }catch (error) {
+          reject(err);
+        }
       }else if(fileType == "pdf"){
         ipcRenderer.send('prefix-convert-pdf', filePath);
         resolve({})
@@ -120,11 +227,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectFile: () => ipcRenderer.invoke('select-file'),
   saveData: (key, value) => store.set(key, value),
   loadData: (key) => store.get(key),
-  openNewWindow: () => ipcRenderer.send('open-set-window'),
+  openNewWindow: (message) => ipcRenderer.send('open-set-window',message),
   sendMessageToParent: (message) => ipcRenderer.send('message-from-child', message),
   onMessageFromParent: (callback) => ipcRenderer.on('message-to-parent', (event, message) => {
     callback(message)}),
   clickSetting: (callback) => ipcRenderer.on('clickSetting', (event, message) => callback(message)),
+  rebackTolocal: (callback) => ipcRenderer.on('rebackTolocal', (event, message) => callback(message)),
   showContextMenu: () => ipcRenderer.send('show-context-menu'),
   windowMove: (canMove) => ipcRenderer.send("window-move-open", canMove),
   getMachinID: () => ipcRenderer.invoke('getMachinID'), // 激活码页面发送的获取机器ID消息 

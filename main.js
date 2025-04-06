@@ -11,11 +11,184 @@ const eventBus = require('./eventCenter');
 const store = new Store();
 let win = null
 let tray = null
-const createWindow = async() => {
+let onlineStyle = store.get("onlineStyle") || `
+  // 修改页面样式
+  var styleElement = document.getElementById('custom-style');
+  if (!styleElement) {
+    var style = document.createElement('style');
+    style.id = 'custom-style';
+    // 定义要注入的 CSS 样式
+    style.textContent = \`
+      body {
+        background: transparent!important;
+        width: 100vw;
+        height: 100vh;
+      }
+      body::-webkit-scrollbar {
+        display: none;
+      }
+      html body.wr_whiteTheme{
+        background: transparent!important;
+      }
+      .book, .listmain {
+        border: none!important;
+      }
+      .readerBottomBar_content{
+        display:none!important;
+      }
+      .readerContent .app_content  {
+        background: transparent!important;
+      }
+      .wr_whiteTheme .readerContent .app_content {
+        background: transparent!important;
+      }
+      .wr_whiteTheme .readerTopBar,.readerTopBar {
+        display:none!important;
+      }
+      audio, canvas, video {
+        background-color: transparent!important;
+      }
+
+
+      .questions-single-container,.header-container,.answer-card-content,.input-radio {
+        background: transparent!important;
+      }
+      .choice-radio-label:hover,.ant-back-top-inner,.answer-btn,.answered,.chapter-container {
+        background: transparent!important;
+      }
+      .main-bg,.arrow-bg,.title-right,.fill-1 {
+        fill: transparent!important;
+      }
+    \`;
+    document.head.appendChild(style);
+  }
+`
+let cancalcustomStyle = `
+var header = document.querySelector('head');
+// 查找 <style> 标签
+var styleElement = document.getElementById('custom-style');
+// 检查 <style> 标签是否存在并且在 <header> 中
+if (styleElement && header.contains(styleElement)) {
+  // 移除 <style> 标签
+  header.removeChild(styleElement);
+  console.log('Style element removed');
+} else {
+  console.log('Style element not found or not in header');
+}
+`
+let cumstomOnlineStyle = `
+  if(typeof globleStyleDom == 'undefined'){
+    // 创建一个新的 <style> 元素，添加全局需要的样式
+    var globleStyleDom = document.createElement('style');
+    globleStyleDom.id = 'globleStyle';
+    globleStyleDom.textContent =\`
+      .hiden{
+        opacity: 0!important;
+      }
+    \`;
+   document.head.appendChild(globleStyleDom);
+  }
+  var newDiv = document.getElementsByTagName("html")[0]
+  var titlebar = document.getElementsByTagName("body")[0]
+  titlebar.addEventListener("mouseenter", ()=>{
+    console.log("鼠标移入")
+    if(userProfileData?.showupWay == "鼠标移入"){
+      newDiv.setAttribute("class", "")
+    }
+  })
+  titlebar.addEventListener("click", ()=>{
+    console.log("鼠标单击")
+    if(userProfileData?.showupWay == "鼠标单击"){
+      newDiv.setAttribute("class", "")
+    }
+  })
+  titlebar.addEventListener("dblclick", ()=>{
+    console.log("鼠标双击")
+    if(userProfileData?.showupWay == "鼠标双击"){
+      newDiv.setAttribute("class", "")
+    }
+  })
+  titlebar.addEventListener("mouseleave", ()=>{
+    console.log("鼠标离开")
+    if(userProfileData?.showupWay && userProfileData.showupWay != "不隐藏"){
+      newDiv.setAttribute("class", "hiden")
+    }
+  })
+`
+// 在网页上下文中执行自定义脚本
+const customOnlineScript = `
+  let userProfileData = window.electronAPI.loadData('userProfile') || {};
+  // 获取缓存中的背景透明度
+  var htmlDom = document.getElementsByTagName('html')[0];
+  var bgTransparent = userProfileData.bgTransparent ?? 100;
+  htmlDom.setAttribute("style","opacity:" + bgTransparent/100 + ";")
+  // 获取缓存中的隐藏模式
+  if(userProfileData.hideMode=="是"){
+    ${ onlineStyle }
+  }
+
+  // 创建元素，监听鼠标事件，这样方便后续做隐藏操作
+  ${cumstomOnlineStyle}
+
+  // 监听设置弹窗的配置事件
+  window.electronAPI.onMessageFromParent((message) => {
+    userProfileData = window.electronAPI.loadData('userProfile') || {}
+    if(message.bgTransparent==0 || message.bgTransparent){
+      htmlDom.setAttribute("style","opacity:" + message.bgTransparent/100 + ";")
+    }else if(message.hideMode){
+      // 获取缓存中的隐藏模式
+      let hideModes = userProfileData.hideMode
+      if(hideModes=="是"){
+        ${ onlineStyle }
+      }else{
+        ${ cancalcustomStyle }
+      }
+    }else if(message.showUpWay){
+      console.log("message.showUpWay=====>11", message.showUpWay)
+      if(message.showUpWay == "不隐藏"){
+        newDiv.setAttribute("class", "")
+      }
+    }
+  })
+
+  // 监听右键点击事件
+  window.addEventListener('contextmenu', (event) => {
+    event.preventDefault(); // 阻止默认右键菜单
+    window.electronAPI.showContextMenu(); // 显示自定义菜单
+  });
+  // 监听右键菜单‘设置’选项点击事件 rebackTolocal
+  window.electronAPI.clickSetting(()=>{
+    window.electronAPI.openNewWindow("fromOnlineWindow");
+  })
+  // 监听右键菜单‘返回本地模式’选项点击事件 
+  window.electronAPI.rebackTolocal(()=>{
+    window.electronAPI.openNewWindow("rebackTolocal");
+  })
+  // 监听鼠标事件，实现窗口拖动
+  var titlebar = document.getElementsByTagName("body")[0]
+  titlebar.addEventListener('mousedown', async (e) => {
+    if (event.button === 0) { // 0 表示左键
+      window.electronAPI.windowMove(true);
+    }
+  });
+  document.addEventListener('mouseup', (e) => {
+    if (event.button === 0) { // 0 表示左键
+      window.electronAPI.windowMove(false);
+    }
+  });
+`
+
+const createWindow = async(flag) => {
   let windowSizeRes = store.get("windowSize")
+  let tempWidth = windowSizeRes?.width || 500
+  let tempHeight = windowSizeRes?.height || 240
+  if(flag){
+    tempWidth = 375
+    tempHeight = 667
+  }
   win = new BrowserWindow({
-    width: windowSizeRes?.width || 500,
-    height: windowSizeRes?.height || 240,
+    width: tempWidth,
+    height: tempHeight,
     frame:false,
     alwaysOnTop: true, // 设置窗口始终位于顶层
     transparent: true, // 透明窗口
@@ -28,7 +201,6 @@ const createWindow = async() => {
       nodeIntegration: true // 确保 nodeIntegration 为 true
     }
   })
-
   // 在 macOS 上设置更高的置顶级别
   if (process.platform === 'darwin') {
     win.setAlwaysOnTop(true, 'floating');
@@ -37,9 +209,35 @@ const createWindow = async() => {
       visibleOnFullScreen: true
     });
   }
-  
-  win.loadFile('index.html')
-
+  if(flag){
+    win.loadURL(flag);
+    win.webContents.on('did-finish-load', () => {
+      win.webContents.executeJavaScript(customOnlineScript)
+      .then(result => {
+        console.log('脚本执行结果:', result);
+      }).catch(error => {
+        console.error('脚本执行错误:', error);
+      });
+    });
+    win.webContents.setWindowOpenHandler((details) => {
+      console.log('导航到：details', details);
+      win.loadURL(details.url); // 在当前窗口加载新链接
+      return { action: 'deny' }
+    })
+    // 监听页面加载失败事件
+    win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      console.error('页面加载失败:', validatedURL);
+      console.error('错误代码:', errorCode);
+      console.error('错误描述:', errorDescription);
+      win.close() // 关闭首页窗口
+      win = null
+      createWindow()
+    });
+    cumstomRightMenu(["setting","toLocalModle", "exit"])
+  }else{
+    win.loadFile('index.html')
+    cumstomRightMenu()
+  }
   // 记录软件运行的平台系统类型
   store.set("platform", process.platform)
 
@@ -48,19 +246,21 @@ const createWindow = async() => {
     const [width, height] = win.getSize();
     store.set("windowSize", {width,height})
   });
-  windowMove(win)
+  windowMove()
+  validateTokenAndCreatWindow()
+  // win.webContents.openDevTools();
+}
 
+function validateTokenAndCreatWindow(){
   let validateRes = validateToken()
   if(validateRes.error == 0 || validateRes.error == 1){
     createTokenWindow()
   }
-  
-  // win.webContents.openDevTools();
 }
 
 // 创建设置弹窗
 let newWindow = null
-function createNewWindow() {
+function createNewWindow(isOnlineMode="NO") {
   newWindow = new BrowserWindow({
     width: 500,
     // width: 1000,
@@ -74,7 +274,9 @@ function createNewWindow() {
     }
   });
 
-  newWindow.loadFile('settings.html');
+  // newWindow.loadFile('settings.html');
+  console.log('isOnlineMode:====>', isOnlineMode);
+  newWindow.loadURL(`file://${__dirname}/settings.html?isOnlineMode=${isOnlineMode}`);
 
   // 完全移除菜单
   newWindow.removeMenu();
@@ -85,7 +287,7 @@ function createNewWindow() {
     newWindow.webContents.send('message-to-parent1', message);
     novelWindow.close()
   });
-
+  // validateTokenAndCreatWindow()
   // newWindow.webContents.openDevTools();
 }
 
@@ -125,6 +327,7 @@ function changeNovelWindow(novalName) {
   novelWindow.loadURL(`file://${__dirname}/novalChange.html?novalName=${encodedNovalName}`);
   // 完全移除菜单
   novelWindow.removeMenu();
+  // validateTokenAndCreatWindow()
   // novelWindow.webContents.openDevTools();
 }
 
@@ -149,13 +352,84 @@ function createOnlineNovelWindow(novalName) {
   // 完全移除菜单
   onlineNovelWindow.removeMenu();
 
-
+  // validateTokenAndCreatWindow()
   initOnlieSource()
   // onlineNovelWindow.webContents.openDevTools();
 }
 
 function initOnlieSource(){
-  let onlineSource = store.get('onlineSource') || {}
+  // let onlineSource = store.get('onlineSource') || {}
+  let onlineSource = { // 在线书源规则
+		"searchNovalObj":{ // 书源搜索规则
+			"何以笙箫默":{
+				website: "http://www.yetianlian.net",
+				searchNovaUrl: "http://www.yetianlian.net/s.php?ie=utf-8&q=${novalName}",
+				method: "GET",
+				body: null,
+				"headers": {
+					"accept-language": "en-US,en;q=0.9",
+					"cache-control": "max-age=0",
+					"upgrade-insecure-requests": "1",
+				},
+				bookRules: {
+					bookeList: ".type_show .bookbox",
+					bookName: {
+						selecterName: ".bookname",
+					},
+					bookUrl: {
+						selecterName: ".bookimg a",
+						attrName: "href",
+						withHost: false,
+					},
+					bookAuthor: {
+						selecterName: ".author",
+						removeString: "作者："
+					},
+					bookCatagory: {
+						selecterName: ".cat",
+					},
+					bookStatus: {
+						selecterName: ".update",
+					},
+					bookDesc: {
+						selecterName: ".update",
+					},
+					bookImg: {
+						selecterName: ".bookimg img",
+						attrName: "src",
+						withHost: false,
+					},
+					bookId: {
+						selecterName: ".bookimg a",
+						attrName: "href",
+					},
+				}
+			}
+		},
+		"chapterNovalObj":{ // 书源章节列表规则
+			"何以笙箫默":{
+				chapterNovalUrl: "http://www.yetianlian.net${novalId}",
+				chapterRules: {
+					chapterList: ".listmain dd",
+					chapterName: {
+						selecterName: "a",
+					},
+					chapterUrl: {
+						selecterName: "a",
+						attrName: "href",
+						withHost: false,
+					}
+				}
+			}
+		},
+		"contentNovalObj":{ // 书源章节内容规则
+			"何以笙箫默":{
+				baseChapterList: true,
+				regx: "&nbsp;[^<]*",
+				subRegx: "[&nbsp;]*",
+			}
+		}
+	}
   console.log('onlineSource.searchNovalObj===>111111',onlineSource.searchNovalObj)
   if(!onlineSource.searchNovalObj || !onlineSource.chapterNovalObj || !onlineSource.contentNovalObj) return
   getNovalUtilsMap = new getNovalUtils(onlineSource.searchNovalObj,onlineSource.chapterNovalObj,onlineSource.contentNovalObj)
@@ -330,6 +604,8 @@ function creatNovelChapterWindow(charpterUrl) {
     height: 400,
     parent: onlineNovelWindow,
     autoHideMenuBar:true,
+    transparent: true, // 透明窗口
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -359,10 +635,9 @@ function creatNovelChapterWindow(charpterUrl) {
     });
     return { action: 'deny' }
   })
+  // validateTokenAndCreatWindow()
   // novelChapterWindow.webContents.openDevTools();
 }
-
-
 
 // 监听小说切换窗口事件
 ipcMain.on('novalChangeEvent', (event, message) => {
@@ -372,12 +647,20 @@ ipcMain.on('novalChangeEvent', (event, message) => {
 
 // 监听线上小说导入窗口事件
 ipcMain.on('onlineNovalImport', (event, message) => {
-  createOnlineNovelWindow()
+  console.log('onlineNovalImport----:',message);
+  if(message){
+    win.close() // 关闭首页窗口
+    win = null
+    newWindow.close() // 关闭设置窗口
+    newWindow = null
+    createWindow(message)
+  }else{
+    createOnlineNovelWindow()
+  }
 });
 
 // 监听关闭激活窗口的请求
 ipcMain.on('closeChildWindow', () => {
-  console.log('关闭弹窗请求----:',tokenWindow);
   if (tokenWindow) {
     tokenWindow.close();
   }
@@ -398,6 +681,11 @@ app.whenReady().then(() => {
   createWindow()
   const ret = globalShortcut.register('CommandOrControl+Shift+O', () => {
     createNewWindow();
+  });
+
+  // 禁用 Command+W 或 Ctrl+W 快捷键 防止激活码页面被快捷键跳过，这里注册一个全局的快捷键，可能会影响其他软件的使用，后续考虑优化
+  globalShortcut.register('CommandOrControl+W', () => {
+    app.quit()
   });
 
   if (!ret) {
@@ -421,13 +709,25 @@ app.on('will-quit', () => {
   globalShortcut.unregisterAll();
 });
 
-ipcMain.on('open-set-window', () => {
-  createNewWindow();
+ipcMain.on('open-set-window', (event, message) => {
+  console.log('open-set-window----:',message);
+  if(message == "rebackTolocal"){ 
+    win.close() // 关闭首页窗口
+    createWindow()
+  }else if(message == "fromOnlineWindow"){
+    createNewWindow("YES");
+  }else{
+    createNewWindow();
+  }
 });
 
 // 监听【设置】子窗口发送的消息
 ipcMain.on('message-from-child', (event, message) => {
   console.log('Message from child:', message);
+  if(message.fontPercent){
+    console.log('message.fontPercent/100', message.fontPercent/100);
+    win.webContents.setZoomFactor(message.fontPercent/100);
+  }
   if(process.platform == "darwin"){ // 判断是否为macOS系统
     if(message.statusBarIcon == "是"){
       app.dock.hide()
@@ -507,6 +807,10 @@ ipcMain.on('message-from-win', async (event, message) => {
    }
    
    onlineNovelWindow.webContents.send('message-to-win', message);
+  }else if(message.windowName =="novelWindowtokenWindow"){
+    if(message.action == "closePage"){
+      app.quit()
+    }
   }
 })
 
@@ -533,36 +837,52 @@ ipcMain.handle('activeAppToken',  (event, message) => {
 });
 
 // 自定义右键菜单
-const contextMenu = Menu.buildFromTemplate([
-  {
-    label: `设置(${process.platform == "darwin"?"command":"ctrl"}+shift+O)`,
-    click: () => {
-      win.webContents.send('clickSetting', null);
+let contextMenu = null
+function cumstomRightMenu(menuItems=["setting", "exit"]) {
+  let menuItemObj = {
+    setting: {
+      label: `设置(${process.platform == "darwin"?"command":"ctrl"}+shift+O)`,
+      click: () => {
+        win.webContents.send('clickSetting', null);
+      },
     },
-  },
-  {
-    label: '退出应用',
-    click: () => {
-      app.quit()
+    exit: {
+      label: '退出应用',
+      click: () => {
+        app.quit()
+      },
+    },
+    toLocalModle: {
+      label: '返回本地模式',
+      click: () => {
+        // win.webContents.send('clickSetting', null);
+        win.webContents.send('rebackTolocal', null);
+      },
     },
   }
-]);
-// 监听右键菜单请求
-ipcMain.on('show-context-menu', (event) => {
-  const winRightClick = BrowserWindow.fromWebContents(event.sender);
-  contextMenu.popup(winRightClick);
-});
+  let menuItemArr = []
+  menuItems.forEach((element, index) => {
+    menuItemArr.push(menuItemObj[element])
+  })
+  console.log("menuItemArr===>", menuItemArr);
+  contextMenu = Menu.buildFromTemplate(menuItemArr);
+  // 监听右键菜单请求
+  ipcMain.on('show-context-menu', (event) => {
+    const winRightClick = BrowserWindow.fromWebContents(event.sender);
+    contextMenu.popup(winRightClick);
+  });  
+}
+
+// cumstomRightMenu()
 
 /**
  * 窗口移动 参考文章：https://zhuanlan.zhihu.com/p/112564936
- * @param win 
  */
-function windowMove(win) {
-
+function windowMove() {
+  console.log("win===>222", win.isDestroyed());
   let winStartPosition = {x: 0, y: 0};
   let mouseStartPosition = {x: 0, y: 0};
   let movingInterval = null;
-
   /**
    * 窗口移动事件
    */

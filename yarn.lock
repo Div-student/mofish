@@ -1722,6 +1722,11 @@
   "resolved" "https://registry.npmmirror.com/jsbn/-/jsbn-1.1.0.tgz"
   "version" "1.1.0"
 
+"jschardet@^3.1.4":
+  "integrity" "sha512-/kmVISmrwVwtyYU40iQUOp3SUPk2dhNCMsZBQX0R1/jZ8maaXJ/oZIzUOiyOqcgtLnETFKYChbJ5iDC/eWmFHg=="
+  "resolved" "https://registry.npmmirror.com/jschardet/-/jschardet-3.1.4.tgz"
+  "version" "3.1.4"
+
 "json-buffer@3.0.1":
   "integrity" "sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ=="
   "resolved" "https://registry.npmmirror.com/json-buffer/-/json-buffer-3.0.1.tgz"

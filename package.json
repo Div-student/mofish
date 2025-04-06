@@ -16,20 +16,23 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.yourapp.id",
-    "productName": "YourAppName",
+    "appId": "com.mofish.id",
+    "productName": "mofish",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/logo_win.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "build/logo_mac.icns"
     },
     "linux": {
       "target": [
@@ -43,6 +46,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^7.0.3",
     "epub": "^1.2.1",
+    "jschardet": "^3.1.4",
     "node-machine-id": "^1.1.12",
     "pdf-parse": "^1.1.1"
   }

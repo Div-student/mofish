@@ -14,6 +14,17 @@
     .readingProcess{
       font-size: 12px;
     }
+    #animatedElement{
+      font-size: 12px;
+    }
+    #animatedElement1{
+      font-size: 12px;
+    }
+    .onlineItems{
+      text-decoration: underline;
+      margin-left: 10px;
+      cursor: pointer;
+    }
     #novalProcess,#novalName,#novalChart{
       margin-right: 6px;
       font-weight: bold;
@@ -34,14 +45,21 @@
       display: flex;
       align-items: center;
     }
-    .fontColor,.bgtransparent,.showWay{
+    .fontColor,.bgtransparent,.showWay, #onlineInput{
       padding: 10px 0px;
       border-bottom: 1px dashed #cccc
+    }
+    .btnItems{
+      display: flex;
     }
     #colorPicker{
       margin-bottom: 0px;
     }
     #custom-handle{
+      display: flex;
+      justify-content: center;
+    }
+    #font-handle{
       display: flex;
       justify-content: center;
     }
@@ -92,7 +110,6 @@
     }
     .deleteNoval{
       font-size: 10px;
-      /* background-color: #dddddd; */
       width: 12px;
       height: 12px;
       line-height: 12px;
@@ -103,7 +120,7 @@
       cursor: pointer;
       display: none;
     }
-    #readFileButton, #readOnlineFile{
+    #readFileButton, #readOnlineFile, #switchOnlineFile{
       margin-right: 10px
     }
     .nodata{
@@ -112,19 +129,90 @@
       width: 100%;
       text-align: center;
     }
+    .hidden {
+      height: 1px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+    .visible {
+      height: auto;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+    .input-container {
+      position: relative;
+      width: 0;
+      overflow: hidden;
+      transition: width 0.5s ease;
+    }
+    .btnWrap{
+      display: flex;
+    }
+    .input-container.active {
+      width: 150px; /* 展开后的宽度 */
+    }
+    .input-field {
+      text-decoration: none!important;
+      width: 100%;
+      padding: 0px 6px!important;
+      border: 1px solid #aaa!important;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .input-field:focus {
+      border-color: #007bff; /* 焦点时的边框颜色 */
+      outline: none; /* 移除默认的焦点外框 */
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* 添加阴影效果 */
+    }
+    .search-icon {
+      position: absolute;
+      right: 0px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 16px;
+      color: #888;
+    }
+    .toggle-button {
+      margin-left: 10px;
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
-    <div id="dialog-confirm" title="Empty the recycle bin?">
-      <p>
-        <span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>
-        该小说已导入过，是否替换？
-      </p>
-    </div>
+  <div id="dialog-confirm" title="Empty the recycle bin?">
+    <p>
+      <span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>
+      该小说已导入过，是否替换？
+    </p>
+  </div>
   <div id="accordion">
-    <h3>小说设置</h3>
+    <h3 id="novalSet">小说设置</h3>
     <div>
-      <div><button id="readFileButton">导入本地小说</button><button id="readOnlineFile" onclick="onlineNoval()">导入线上小说</button></div>
+      <div class="btnWrap">
+        <button id="readFileButton">导入本地小说</button>
+        <!-- <button id="readOnlineFile" onclick="onlineNoval()">导入线上小说</button> -->
+        <button id="switchOnlineFile" onclick="openOnline()">切换线上阅读</button>
+        <div class="input-container" id="inputContainer">
+          <input type="text" class="input-field" id="inputField" placeholder="输入内容...">
+          <span class="search-icon" onclick="getInputValue()">🔍</span>
+        </div>
+      </div>
+      <div class="onlineWrap">
+        <div id="animatedElement" class="hidden">
+          <span class="onlineItems" onclick="onlineNoval('weRead')">微信读书</span>
+          <span class="onlineItems" onclick="onlineNoval('fenbi')">粉笔题库</span>
+        </div>
+      </div>
       <div class="readingProcess">
         <span>当前正在阅读：</span><span id="novalName">无</span><span>阅读章节：</span><span id="novalChart">无</span><span>阅读进度：</span><span id="novalProcess">0%</span>
       </div>
@@ -134,6 +222,19 @@
     </div>
     <h3>个人偏好设置</h3>
     <div>
+      <div id="onlineInput">
+        <div class="btnItems">
+          <button id="switchOnlineFile" onclick="openOnline1()">切换线上阅读</button>
+          <div class="input-container active" id="inputContainer1">
+            <input type="text" class="input-field" id="inputField1" placeholder="输入内容...">
+            <span class="search-icon" onclick="getInputValue(1)">🔍</span>
+          </div>
+        </div>
+        <div id="animatedElement1" class="visible">
+          <span class="onlineItems" onclick="onlineNoval('weRead')">微信读书</span>
+          <span class="onlineItems" onclick="onlineNoval('fenbi')">粉笔题库</span>
+        </div>
+      </div>
       <div class="showWay">
         <fieldset>
           <legend>小说出现方式: </legend>
@@ -153,7 +254,13 @@
           <div id="custom-handle" class="ui-slider-handle"></div>
         </div>
       </div>
-      <div class="fontColor showIcon">
+      <div id="fontsliderWrap" class="bgtransparent">
+        <span>文字大小：</span>
+        <div id="fontslider">
+          <div id="font-handle" class="ui-slider-handle"></div>
+        </div>
+      </div>
+      <div id="fontSet" class="fontColor showIcon">
         <div class="wordWrap">
           <span>文字颜色：</span>
           <input id="colorPicker" type="color">
@@ -170,17 +277,17 @@
       </div>
       <div class="fontColor showIcon">
         <div>
+          <label for="speeds">是否开启隐藏模式:</label>
+          <select name="speeds" id="speeds">
+            <option>是</option>
+            <option selected="selected">否</option>
+          </select>
+        </div>
+        <div>
           <label for="speed">是否隐藏状态栏图标:</label>
           <select name="speed" id="speed">
             <option>是</option>
             <option>否</option>
-          </select>
-        </div>
-        <div>
-          <label for="speeds">是否隐藏托盘图标:</label>
-          <select name="speeds" id="speeds">
-            <option>是</option>
-            <option selected="selected">否</option>
           </select>
         </div>
       </div>

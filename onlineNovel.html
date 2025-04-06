@@ -41,12 +41,14 @@
             text-overflow: ellipsis;
             position: relative;
         }
-        .importSource{
+        .importSourceWrap{
           position:absolute;
           top:100%;
           left: 2px;
           color: #666;
           font-size: 12px;
+        }
+        .importSource{
           cursor: pointer;
           text-decoration: underline;
         }
@@ -262,7 +264,11 @@
   <div class="dropdown" id="dropdown">
     <label><input type="checkbox" id="select-all" onclick="selectAll(this)"> 全选</label>
   </div>
-  <span class="importSource" onclick="openModal()">导入书源</span>
+  <div class="importSourceWrap">
+    <span class="importSource" onclick="openModal()">导入书源</span>
+    <span class="importSource" onclick="openModal('makeSource')">书源制作</span>
+  </div>
+  
 </div>
 <div id="searchResults"></div>
 <div class="modal" id="modal">
@@ -275,8 +281,10 @@
 </div>
 
 <script>
+  let isMakeSource = false;
   let onlineSource = {};
   function initPage(){
+    isMakeSource = false
     onlineSource = window.electronAPI.loadData('onlineSource') || {};
     console.log('onlineSource===>:', onlineSource);
     formateOptions(onlineSource)
@@ -292,10 +300,14 @@
     })
   }
   initPage()
-  function openModal() {
+  function openModal(flag) {
+    if(flag === 'makeSource'){
+      isMakeSource = true
+    }
     document.getElementById('modal').style.display = 'flex';
   }
   function closeModal() {
+    isMakeSource = false
     document.getElementById('modal').style.display = 'none';
   }
   // 压缩 JSON 对象
@@ -458,9 +470,19 @@
     //   }
     // }
     // const compressed = compressJson(originalJson);
-    // console.log('Compressed:', compressed);
-
+    console.log('isMakeSource:', isMakeSource);
     const base64String = document.querySelector('.modal-content #sourceInput').value.trim();
+    if(isMakeSource){
+      // 制作书源的逻辑
+      console.log('base64String:', JSON.parse(base64String));
+    }else{
+      importOnlineSource(base64String)
+    }
+    // 关闭模态框
+    closeModal();
+  }
+
+  function importOnlineSource(base64String){
     const decompressed = decompressJson(base64String);
     window.electronAPI.saveData('onlineSource', decompressed);
     console.log('Decompressed:', decompressed);
@@ -472,8 +494,6 @@
       windowName: 'onlineNovelWindow',
       action:'importantSource',
     })
-    // 关闭模态框
-    closeModal();
   }
   function toggleDropdown() {
     const dropdown = document.getElementById('dropdown');
